@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Build/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Project Path="src/InvoiceBuilder.AppHost/InvoiceBuilder.AppHost.csproj" />
+  <Project Path="src/InvoiceBuilder.ServiceDefaults/InvoiceBuilder.ServiceDefaults.csproj" Id="9dfa674c-9ce1-4a84-b248-96cb137e3e98" />
+</Solution>
