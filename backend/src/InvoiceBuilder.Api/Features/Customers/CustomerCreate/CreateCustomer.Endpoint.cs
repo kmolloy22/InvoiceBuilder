@@ -1,4 +1,5 @@
-﻿using InvoiceBuilder.Application.Features.Customers;
+﻿using InvoiceBuilder.Api.Shared.Infrastructure.Validation;
+using InvoiceBuilder.Application.Features.Customers;
 using InvoiceBuilder.Application.Features.Customers.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,24 @@ public static class CreateCustomerEndpoint
 			[FromServices] IMediator mediator) =>
 		{
 			var result = await mediator.Send(new CreateCustomerCommand(dto));
-			return Results.Ok(result);
-		});
+
+			var idN = result.Id.ToString("N");
+			var location = $"/api/customers/{idN}";
+
+			var response = new CreateCustomerResponseDto(
+				Id: idN,
+				Location: location,
+				CreatedAt: result.CreatedAt);
+
+			return Results.Created(location, response);
+		})
+		.AddEndpointFilter<ValidationFilter<CreateCustomerDto>>()
+		.WithName("CreateCustomer")
+		.WithSummary("Creates a new customer.")
+		.WithDescription("Creates a new customer with the provided details.")
+		.Produces<CreateCustomerResponseDto>(StatusCodes.Status201Created)
+		.Produces<ValidationProblemDetails>(StatusCodes.Status400BadRequest)
+		.ProducesProblem(StatusCodes.Status500InternalServerError);
+		
 	}
 }

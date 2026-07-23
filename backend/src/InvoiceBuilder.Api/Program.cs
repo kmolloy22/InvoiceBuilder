@@ -1,5 +1,7 @@
+using FluentValidation;
 using InvoiceBuilder.Api.Features.Customers;
 using InvoiceBuilder.Application.Features.Customers;
+using InvoiceBuilder.Application.Features.Customers.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,8 @@ builder.Services.AddMediatR(cfg =>
 	cfg.RegisterServicesFromAssembly(typeof(CreateCustomerHandler).Assembly);
 });
 
+// FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<CreateCustomerDtoValidator>();
 
 var app = builder.Build();
 

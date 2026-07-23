@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <ProjectReference Include="..\InvoiceBuilder.Application\InvoiceBuilder.Application.csproj" />
     <ProjectReference Include="..\InvoiceBuilder.ServiceDefaults\InvoiceBuilder.ServiceDefaults.csproj" />
