@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Api/">
+    <Project Path="src/InvoiceBuilder.Api/InvoiceBuilder.Api.csproj" />
+  </Folder>
+  <Folder Name="/Build/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/Core/">
+    <Project Path="src/InvoiceBuilder.Application/InvoiceBuilder.Application.csproj" Id="313abcdb-9ea6-430e-9323-54964c49dc2a" />
+    <Project Path="src/InvoiceBuilder.Domain/InvoiceBuilder.Domain.csproj" Id="f8dc89b6-188a-49df-b083-d07c998cf95e" />
+  </Folder>
+  <Folder Name="/Hosting/">
+    <Project Path="src/InvoiceBuilder.AppHost/InvoiceBuilder.AppHost.csproj" />
+    <Project Path="src/InvoiceBuilder.ServiceDefaults/InvoiceBuilder.ServiceDefaults.csproj" Id="9dfa674c-9ce1-4a84-b248-96cb137e3e98" />
+  </Folder>
+</Solution>

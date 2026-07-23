@@ -8,4 +8,8 @@
     <UserSecretsId>d88cdb4f-1a53-48a4-83a1-7f554f4d00e4</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\InvoiceBuilder.Api\InvoiceBuilder.Api.csproj" />
+  </ItemGroup>
+
 </Project>
