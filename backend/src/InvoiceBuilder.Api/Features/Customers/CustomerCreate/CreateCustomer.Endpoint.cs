@@ -1,6 +1,6 @@
 ﻿using InvoiceBuilder.Api.Shared.Infrastructure.Validation;
 using InvoiceBuilder.Application.Features.Customers;
-using InvoiceBuilder.Application.Features.Customers.Models;
+using InvoiceBuilder.Application.Features.Customers.Models.Create;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

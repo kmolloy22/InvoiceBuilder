@@ -1,4 +1,4 @@
-﻿namespace InvoiceBuilder.Application.Features.Customers.Models;
+﻿namespace InvoiceBuilder.Application.Features.Customers.Models.Create;
 
 public sealed record CreateCustomerResponseDto(
 	/// <summary>

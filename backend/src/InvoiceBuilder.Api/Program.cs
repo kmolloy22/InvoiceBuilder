@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMediatR(cfg =>
 {
 	cfg.RegisterServicesFromAssembly(typeof(CreateCustomerHandler).Assembly);
+	cfg.RegisterServicesFromAssembly(typeof(GetCustomersHandler).Assembly);
 });
 
 // FluentValidation

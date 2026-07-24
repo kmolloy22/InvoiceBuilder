@@ -1,4 +1,5 @@
 ﻿using InvoiceBuilder.Api.Features.Customers.CustomerCreate;
+using InvoiceBuilder.Api.Features.Customers.CustomersGet;
 
 namespace InvoiceBuilder.Api.Features.Customers;
 
@@ -9,5 +10,6 @@ public static class CustomerEndpoint
 		var group = app.MapGroup("api/customers").WithTags("Customers");
 
 		group.MapCreateCustomerEndpoint();
+		group.MapGetCustomersEndpoint();
 	}
 }

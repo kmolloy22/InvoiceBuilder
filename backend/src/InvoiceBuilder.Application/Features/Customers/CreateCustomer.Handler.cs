@@ -1,4 +1,4 @@
-﻿using InvoiceBuilder.Application.Features.Customers.Models;
+﻿using InvoiceBuilder.Application.Features.Customers.Models.Create;
 using InvoiceBuilder.Application.Shared.Results;
 using InvoiceBuilder.Domain.Entities;
 using MediatR;
@@ -9,15 +9,15 @@ public record CreateCustomerCommand(CreateCustomerDto Dto) : IRequest<CreateCust
 
 public class CreateCustomerHandler : IRequestHandler<CreateCustomerCommand, CreateCustomerResult>
 {
-	public async Task<CreateCustomerResult> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
+	public async Task<CreateCustomerResult> Handle(CreateCustomerCommand cmd, CancellationToken cancellationToken)
 	{
 		var entity = Customer.Create(
-			request.Dto.CompanyName,
-			request.Dto.CustomerName,
-			request.Dto.CustomerAddress,
-			request.Dto.PostalCode,
-			request.Dto.CustomerEmail,
-			request.Dto.CustomerTaxVatId);
+			cmd.Dto.CompanyName,
+			cmd.Dto.CustomerName,
+			cmd.Dto.CustomerAddress,
+			cmd.Dto.PostalCode,
+			cmd.Dto.CustomerEmail,
+			cmd.Dto.CustomerTaxVatId);
 
 		return new CreateCustomerResult(entity.Id, entity.CreatedAt);
 	}

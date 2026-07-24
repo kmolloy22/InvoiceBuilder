@@ -1,0 +1,2 @@
+﻿### Get Paged Customers
+GET {{host}}/api/customers?offset=0&limit=10

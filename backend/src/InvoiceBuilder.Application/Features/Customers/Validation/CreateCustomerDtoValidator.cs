@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using InvoiceBuilder.Application.Features.Customers.Models;
+using InvoiceBuilder.Application.Features.Customers.Models.Create;
 
 namespace InvoiceBuilder.Application.Features.Customers.Validation;
 
