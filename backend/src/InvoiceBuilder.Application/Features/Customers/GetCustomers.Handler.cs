@@ -7,7 +7,7 @@ public record GetCustomersCommand() : IRequest<GetCustomersResult>;
 
 public class GetCustomersHandler : IRequestHandler<GetCustomersCommand, GetCustomersResult>
 {
-	public async Task<GetCustomersResult> Handle(GetCustomersCommand request, CancellationToken cancellationToken)
+	public async Task<GetCustomersResult> Handle(GetCustomersCommand cmd, CancellationToken cancellationToken)
 	{
 
 		var dto = new GetCustomersResult(

@@ -1,0 +1,2 @@
+﻿### Delete Customer
+DELETE {{host}}/api/customers/fd367844-e916-4dfa-948a-69f826c65fd7

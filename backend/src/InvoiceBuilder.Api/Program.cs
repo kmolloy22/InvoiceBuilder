@@ -8,7 +8,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Register MediatR – scan Application assembly for handlers
 builder.Services.AddMediatR(cfg =>
 {
-	cfg.RegisterServicesFromAssembly(typeof(CreateCustomerHandler).Assembly);
 	cfg.RegisterServicesFromAssembly(typeof(GetCustomersHandler).Assembly);
 });
 

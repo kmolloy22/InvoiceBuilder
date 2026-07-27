@@ -10,11 +10,5 @@
     <ProjectReference Include="..\InvoiceBuilder.Application\InvoiceBuilder.Application.csproj" />
     <ProjectReference Include="..\InvoiceBuilder.ServiceDefaults\InvoiceBuilder.ServiceDefaults.csproj" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Features\Customers\CusromerGetById\" />
-    <Folder Include="Features\Customers\CustomerDelete\" />
-    <Folder Include="Features\Customers\CustomerUpdate\" />
-  </ItemGroup>
 
 </Project>

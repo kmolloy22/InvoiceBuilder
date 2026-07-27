@@ -7,7 +7,7 @@ namespace InvoiceBuilder.Application.Features.Customers;
 
 public record CreateCustomerCommand(CreateCustomerDto Dto) : IRequest<CreateCustomerResult>;
 
-public class CreateCustomerHandler : IRequestHandler<CreateCustomerCommand, CreateCustomerResult>
+internal class CreateCustomerHandler : IRequestHandler<CreateCustomerCommand, CreateCustomerResult>
 {
 	public async Task<CreateCustomerResult> Handle(CreateCustomerCommand cmd, CancellationToken cancellationToken)
 	{
