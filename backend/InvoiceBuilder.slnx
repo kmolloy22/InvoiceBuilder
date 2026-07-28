@@ -15,4 +15,9 @@
     <Project Path="src/InvoiceBuilder.AppHost/InvoiceBuilder.AppHost.csproj" />
     <Project Path="src/InvoiceBuilder.ServiceDefaults/InvoiceBuilder.ServiceDefaults.csproj" Id="9dfa674c-9ce1-4a84-b248-96cb137e3e98" />
   </Folder>
+  <Folder Name="/Shared/" />
+  <Folder Name="/Shared/Infrastructure/" />
+  <Folder Name="/Shared/Infrastructure/Database/">
+    <Project Path="src/InvoiceBuilder.Database/InvoiceBuilder.Database.csproj" Id="5334a8de-0dac-40dd-8f24-245e45062610" />
+  </Folder>
 </Solution>

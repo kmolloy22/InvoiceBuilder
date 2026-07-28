@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\InvoiceBuilder.Api\InvoiceBuilder.Api.csproj" />
   </ItemGroup>
 

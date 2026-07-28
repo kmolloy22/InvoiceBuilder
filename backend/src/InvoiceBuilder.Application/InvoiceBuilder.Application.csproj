@@ -10,9 +10,11 @@
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="MediatR" />
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\InvoiceBuilder.Database\InvoiceBuilder.Database.csproj" />
     <ProjectReference Include="..\InvoiceBuilder.Domain\InvoiceBuilder.Domain.csproj" />
   </ItemGroup>
 

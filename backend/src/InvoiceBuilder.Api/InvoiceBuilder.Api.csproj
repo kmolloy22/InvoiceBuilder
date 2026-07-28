@@ -5,6 +5,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\InvoiceBuilder.Application\InvoiceBuilder.Application.csproj" />
