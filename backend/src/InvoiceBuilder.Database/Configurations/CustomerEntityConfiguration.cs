@@ -8,6 +8,14 @@ public class CustomerEntityConfiguration : IEntityTypeConfiguration<Customer>
 {
 	public void Configure(EntityTypeBuilder<Customer> builder)
 	{
-		builder.Property(customer => customer.CustomerName).IsRequired();
+		builder.HasKey(x => x.Id);
+
+		builder.Property(x => x.CompanyName).IsRequired();
+		builder.Property(x => x.CustomerName).IsRequired();
+		builder.Property(x => x.CustomerAddress).IsRequired();
+		builder.Property(x => x.PostalCode).IsRequired();
+		builder.Property(x => x.CustomerEmail).IsRequired();
+		builder.Property(x => x.CustomerTaxVatId).IsRequired();
+		builder.Property(x => x.CreatedAt).IsRequired();
 	}
 }

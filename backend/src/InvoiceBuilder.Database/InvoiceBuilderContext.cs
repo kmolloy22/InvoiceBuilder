@@ -8,9 +8,14 @@ public class InvoiceBuilderContext(DbContextOptions<InvoiceBuilderContext> optio
 	: DbContext(options)
 {
 	public DbSet<Customer> Customers => Set<Customer>();
+	public DbSet<Sender> Senders => Set<Sender>();
+	public DbSet<Invoice> Invoices => Set<Invoice>();
+	public DbSet<InvoiceLineItem> InvoiceLineItems => Set<InvoiceLineItem>();
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
-		modelBuilder.ApplyConfigurationsFromAssembly(typeof(CustomerEntityConfiguration).Assembly);
+		modelBuilder.ApplyConfigurationsFromAssembly(typeof(InvoiceBuilderContext).Assembly);
+		//modelBuilder.ApplyConfigurationsFromAssembly(typeof(SenderEntityConfiguration).Assembly);
+		//modelBuilder.ApplyConfigurationsFromAssembly(typeof(InvoiceEntityConfiguration).Assembly);
 	}
 }

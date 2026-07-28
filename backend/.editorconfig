@@ -586,3 +586,6 @@ dotnet_diagnostic.MA0051.severity = suggestion
 [*.{sh,bat,ps1}]
 trim_trailing_whitespace= true
 insert_final_newline= true
+
+[backend/src/InvoiceBuilder.Api/Shared/Extensions/DataExtensions.cs]
+dotnet_diagnostic.RCS1123.severity = none
