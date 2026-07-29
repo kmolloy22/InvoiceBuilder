@@ -1,17 +1,31 @@
 ﻿using InvoiceBuilder.Application.Features.Customers.Models.Update;
 using InvoiceBuilder.Application.Shared.Results;
-using InvoiceBuilder.Domain.Entities;
+using InvoiceBuilder.Database;
+using InvoiceBuilder.Domain.Results;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace InvoiceBuilder.Application.Features.Customers;
 
-public record UpdateCustomerCommand(Guid Id, UpdateCustomerDto Dto) : IRequest<UpdateCustomerResult>;
+public record UpdateCustomerCommand(Guid Id, UpdateCustomerDto Dto) : IRequest<Result<UpdateCustomerResult>>;
 
-internal class UpdateCustomerHandler : IRequestHandler<UpdateCustomerCommand, UpdateCustomerResult>
+internal class UpdateCustomerHandler : IRequestHandler<UpdateCustomerCommand, Result<UpdateCustomerResult>>
 {
-	public async Task<UpdateCustomerResult> Handle(UpdateCustomerCommand cmd, CancellationToken cancellationToken)
+	private readonly InvoiceBuilderContext _dbContext;
+
+	public UpdateCustomerHandler(InvoiceBuilderContext dbContext)
 	{
-		var customer = new Customer();
+		_dbContext = dbContext;
+	}
+
+	public async Task<Result<UpdateCustomerResult>> Handle(UpdateCustomerCommand cmd, CancellationToken cancellationToken)
+	{
+		var customer = await _dbContext.Customers.FirstOrDefaultAsync(x => x.Id == cmd.Id, cancellationToken);
+		if (customer is null)
+		{
+			return Result<UpdateCustomerResult>.Failure(
+				new ResultError("CustomerNotFound", $"Customer with ID {cmd.Id} was not found.", ResultErrorType.NotFound));
+		}
 
 		customer.Update(
 			cmd.Dto.CompanyName,
@@ -21,7 +35,9 @@ internal class UpdateCustomerHandler : IRequestHandler<UpdateCustomerCommand, Up
 			cmd.Dto.CustomerEmail,
 			cmd.Dto.CustomerTaxVatId);
 
-		return new UpdateCustomerResult(
+		await _dbContext.SaveChangesAsync(cancellationToken);
+
+		var result = new UpdateCustomerResult(
 			customer.Id,
 			customer.CompanyName,
 			customer.CustomerName,
@@ -29,5 +45,7 @@ internal class UpdateCustomerHandler : IRequestHandler<UpdateCustomerCommand, Up
 			customer.PostalCode,
 			customer.CustomerEmail,
 			customer.CustomerTaxVatId);
+
+		return Result<UpdateCustomerResult>.Success(result);
 	}
 }

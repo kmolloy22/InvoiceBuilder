@@ -15,14 +15,18 @@ public static class CreateCustomerEndpoint
 			[FromServices] IMediator mediator) =>
 		{
 			var result = await mediator.Send(new CreateCustomerCommand(dto));
+			if(result.IsFailure)
+			{
+				return Results.BadRequest(result.Error);
+			}
 
-			var idN = result.Id.ToString("N");
+			var idN = result.Value!.Id.ToString("N");
 			var location = $"/api/customers/{idN}";
 
 			var response = new CreateCustomerResponseDto(
 				Id: idN,
 				Location: location,
-				CreatedAt: result.CreatedAt);
+				CreatedAt: result.Value.CreatedAt);
 
 			return Results.Created(location, response);
 		})

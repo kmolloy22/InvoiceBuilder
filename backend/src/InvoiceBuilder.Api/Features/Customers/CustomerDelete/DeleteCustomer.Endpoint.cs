@@ -13,8 +13,12 @@ public static class DeleteCustomerEndpoint
 			[FromServices] IMediator mediator) =>
 		{
 			var result = await mediator.Send(new DeleteCustomerCommand(Guid.Parse(id)));
+			if(result.IsFailure)
+			{
+				return Results.NotFound(result.Error);
+			}
 
-			return result ? Results.NoContent() : Results.NotFound();
+			return Results.NoContent();
 		})
 		.WithName("DeleteCustomer")
 		.WithSummary("Deletes a customer.")

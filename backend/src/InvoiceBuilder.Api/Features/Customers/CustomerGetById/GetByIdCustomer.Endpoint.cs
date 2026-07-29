@@ -13,7 +13,13 @@ public static class GetByIdCustomerEndpoint
 
 		{
 			var dto = await mediator.Send(new GetCustomerByIdCommand(Guid.Parse(id)));
-			return dto is null ? Results.NotFound() : Results.Ok(dto);
+
+			if(dto.IsFailure)
+			{
+				return Results.NotFound(dto.Error);
+			}
+
+			return Results.Ok(dto);
 		})
 		.WithName("GetCustomer")
 		.WithSummary("Gets a customer by id.")

@@ -12,6 +12,10 @@ public static class GetCustomersEndpoint
 			[FromServices] IMediator mediator) =>
 		{
 			var result = await mediator.Send(new GetCustomersCommand());
+			if(result.IsFailure)
+			{
+				return Results.NotFound(result.Error);
+			}
 
 			return Results.Ok(result);
 		})

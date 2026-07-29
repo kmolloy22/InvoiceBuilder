@@ -16,6 +16,11 @@ public static class UpdateCustomerEndpoint
 			[FromServices] IMediator mediator) =>
 		{
 			var result = await mediator.Send(new UpdateCustomerCommand(Guid.Parse(id), dto));
+			if(result.IsFailure)
+			{
+				return Results.NotFound(result.Error);
+			}
+
 			return Results.Ok(result);
 		})
 		.AddEndpointFilter<ValidationFilter<UpdateCustomerDto>>()

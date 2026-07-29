@@ -1,13 +1,14 @@
 ﻿using InvoiceBuilder.Application.Shared.Results;
 using InvoiceBuilder.Database;
+using InvoiceBuilder.Domain.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace InvoiceBuilder.Application.Features.Customers;
 
-public record GetCustomersCommand() : IRequest<GetCustomersResult>;
+public record GetCustomersCommand() : IRequest<Result<GetCustomersResult>>;
 
-public class GetCustomersHandler : IRequestHandler<GetCustomersCommand, GetCustomersResult>
+public class GetCustomersHandler : IRequestHandler<GetCustomersCommand, Result<GetCustomersResult>>
 {
 	private readonly InvoiceBuilderContext _dbContext;
 
@@ -15,7 +16,7 @@ public class GetCustomersHandler : IRequestHandler<GetCustomersCommand, GetCusto
 	{
 		_dbContext = dbContext;
 	}
-	public async Task<GetCustomersResult> Handle(GetCustomersCommand cmd, CancellationToken cancellationToken)
+	public async Task<Result<GetCustomersResult>> Handle(GetCustomersCommand cmd, CancellationToken cancellationToken)
 	{
 		var total = await _dbContext.Customers.AsNoTracking().CountAsync(cancellationToken);
 
@@ -37,6 +38,6 @@ public class GetCustomersHandler : IRequestHandler<GetCustomersCommand, GetCusto
 			total
 		);
 
-		return dto;
+		return Result<GetCustomersResult>.Success(dto);
 	}
 }

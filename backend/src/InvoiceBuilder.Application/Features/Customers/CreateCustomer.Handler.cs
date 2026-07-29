@@ -1,15 +1,24 @@
 ﻿using InvoiceBuilder.Application.Features.Customers.Models.Create;
 using InvoiceBuilder.Application.Shared.Results;
+using InvoiceBuilder.Database;
 using InvoiceBuilder.Domain.Entities;
+using InvoiceBuilder.Domain.Results;
 using MediatR;
 
 namespace InvoiceBuilder.Application.Features.Customers;
 
-public record CreateCustomerCommand(CreateCustomerDto Dto) : IRequest<CreateCustomerResult>;
+public record CreateCustomerCommand(CreateCustomerDto Dto) : IRequest<Result<CreateCustomerResult>>;
 
-internal class CreateCustomerHandler : IRequestHandler<CreateCustomerCommand, CreateCustomerResult>
+internal class CreateCustomerHandler : IRequestHandler<CreateCustomerCommand, Result<CreateCustomerResult>>
 {
-	public async Task<CreateCustomerResult> Handle(CreateCustomerCommand cmd, CancellationToken cancellationToken)
+	private readonly InvoiceBuilderContext _dbContext;
+
+	public CreateCustomerHandler(InvoiceBuilderContext dbContext)
+	{
+		_dbContext = dbContext;
+	}
+
+	public async Task<Result<CreateCustomerResult>> Handle(CreateCustomerCommand cmd, CancellationToken cancellationToken)
 	{
 		var entity = Customer.Create(
 			cmd.Dto.CompanyName,
@@ -19,6 +28,10 @@ internal class CreateCustomerHandler : IRequestHandler<CreateCustomerCommand, Cr
 			cmd.Dto.CustomerEmail,
 			cmd.Dto.CustomerTaxVatId);
 
-		return new CreateCustomerResult(entity.Id, entity.CreatedAt);
+		await _dbContext.Customers.AddAsync(entity, cancellationToken);
+		await _dbContext.SaveChangesAsync(cancellationToken);
+
+		return Result<CreateCustomerResult>.Success(
+			new CreateCustomerResult(entity.Id, entity.CreatedAt));
 	}
 }
