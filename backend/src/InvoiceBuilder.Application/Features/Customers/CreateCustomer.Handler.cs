@@ -1,5 +1,5 @@
 ﻿using InvoiceBuilder.Application.Features.Customers.Models.Create;
-using InvoiceBuilder.Application.Shared.Results;
+using InvoiceBuilder.Application.Shared.Responses.Customers;
 using InvoiceBuilder.Database;
 using InvoiceBuilder.Domain.Entities;
 using InvoiceBuilder.Domain.Results;

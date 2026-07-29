@@ -1,4 +1,4 @@
-﻿using InvoiceBuilder.Application.Shared.Results;
+﻿using InvoiceBuilder.Application.Shared.Responses.Customers;
 using InvoiceBuilder.Database;
 using InvoiceBuilder.Domain.Results;
 using MediatR;

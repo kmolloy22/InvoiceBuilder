@@ -1,5 +1,6 @@
 using FluentValidation;
 using InvoiceBuilder.Api.Features.Customers;
+using InvoiceBuilder.Api.Features.Senders;
 using InvoiceBuilder.Application.Features.Customers;
 using InvoiceBuilder.Application.Features.Customers.Validation;
 using InvoiceBuilder.Database;
@@ -21,6 +22,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateCustomerDtoValidator>
 var app = builder.Build();
 
 app.MapCustomers();
+app.MapSenders();
 
 await app.InitializeDbAsync();
 

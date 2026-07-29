@@ -1,4 +1,4 @@
-﻿namespace InvoiceBuilder.Application.Shared.Results;
+﻿namespace InvoiceBuilder.Application.Shared.Responses.Customers;
 
 public sealed record GetCustomerResult(
 	Guid Id,
