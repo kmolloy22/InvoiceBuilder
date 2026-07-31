@@ -1,4 +1,5 @@
 ﻿using InvoiceBuilder.Application.Features.Customers;
+using InvoiceBuilder.Application.Features.Customers.Models.Get;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +10,10 @@ public static class GetCustomersEndpoint
 	public static void MapGetCustomersEndpoint(this IEndpointRouteBuilder app)
 	{
 		app.MapGet("/", async (
+			[AsParameters] GetCustomersDto request,
 			[FromServices] IMediator mediator) =>
 		{
-			var result = await mediator.Send(new GetCustomersCommand());
+			var result = await mediator.Send(new GetCustomersCommand(request));
 			if(result.IsFailure)
 			{
 				return Results.NotFound(result.Error);

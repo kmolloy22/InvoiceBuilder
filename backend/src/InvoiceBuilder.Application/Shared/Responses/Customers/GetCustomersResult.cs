@@ -2,9 +2,9 @@
 
 public sealed record GetCustomersResult(
 	List<CustomerListItem> Items,
-	int Offset,
-	int Limit,
-	int Total);
+	Guid? NextCursor,
+	Guid? PreviousCursor,
+	int PageSize);
 
 public sealed record CustomerListItem(
 	Guid Id,
