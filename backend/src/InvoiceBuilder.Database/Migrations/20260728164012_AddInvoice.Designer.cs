@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace InvoiceBuilder.Database.Migrations
+namespace InvoiceBuilder.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(InvoiceBuilderContext))]
     [Migration("20260728164012_AddInvoice")]

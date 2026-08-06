@@ -2,9 +2,9 @@
 
 public sealed record GetSendersResult(
 	List<SenderListItem> Items,
-	int Offset,
-	int Limit,
-	int Total);
+	Guid? NextCursor,
+	Guid? PreviousCursor,
+	int PageSize);
 
 public sealed record SenderListItem(
 	Guid Id,

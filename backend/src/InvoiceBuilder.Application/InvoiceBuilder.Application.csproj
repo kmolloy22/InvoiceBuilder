@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\InvoiceBuilder.Database\InvoiceBuilder.Database.csproj" />
+    <ProjectReference Include="..\InvoiceBuilder.Database\InvoiceBuilder.Infrastructure.Database.csproj" />
     <ProjectReference Include="..\InvoiceBuilder.Domain\InvoiceBuilder.Domain.csproj" />
   </ItemGroup>
 

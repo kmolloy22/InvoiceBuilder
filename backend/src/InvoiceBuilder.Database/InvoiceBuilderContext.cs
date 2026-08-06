@@ -1,5 +1,4 @@
-﻿using InvoiceBuilder.Database.Configurations;
-using InvoiceBuilder.Domain.Entities;
+﻿using InvoiceBuilder.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace InvoiceBuilder.Database;
@@ -15,7 +14,5 @@ public class InvoiceBuilderContext(DbContextOptions<InvoiceBuilderContext> optio
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		modelBuilder.ApplyConfigurationsFromAssembly(typeof(InvoiceBuilderContext).Assembly);
-		//modelBuilder.ApplyConfigurationsFromAssembly(typeof(SenderEntityConfiguration).Assembly);
-		//modelBuilder.ApplyConfigurationsFromAssembly(typeof(InvoiceEntityConfiguration).Assembly);
 	}
 }

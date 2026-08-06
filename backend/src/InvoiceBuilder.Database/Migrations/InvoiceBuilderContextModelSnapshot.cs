@@ -8,8 +8,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace InvoiceBuilder.Database.Migrations
-{
+namespace InvoiceBuilder.Infrastructure.Database.Migrations;
+
     [DbContext(typeof(InvoiceBuilderContext))]
     partial class InvoiceBuilderContextModelSnapshot : ModelSnapshot
     {
@@ -233,4 +233,3 @@ namespace InvoiceBuilder.Database.Migrations
 #pragma warning restore 612, 618
         }
     }
-}

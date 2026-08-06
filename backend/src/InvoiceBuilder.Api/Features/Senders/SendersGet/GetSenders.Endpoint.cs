@@ -1,4 +1,5 @@
 ﻿using InvoiceBuilder.Application.Features.Senders;
+using InvoiceBuilder.Application.Features.Senders.Models.Get;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +10,10 @@ public static class GetSendersEndpoint
 	public static void MapGetSendersEndpoint(this IEndpointRouteBuilder app)
 	{
 		app.MapGet("/", async (
+			[AsParameters] GetSendersDto request,
 			[FromServices] IMediator mediator) =>
 		{
-			var result = await mediator.Send(new GetSendersCommand());
+			var result = await mediator.Send(new GetSendersCommand(request));
 			if (result.IsFailure)
 			{
 				return Results.NotFound(result.Error);
@@ -22,7 +24,6 @@ public static class GetSendersEndpoint
 		.WithName("GetSenders")
 		.WithSummary("Lists senders with pagination support.")
 		.WithDescription("Returns a list of senders.")
-		//.Produces<PagedResult<GetCustomerDto>>(StatusCodes.Status200OK, "application/json")
 		.Produces<object>(StatusCodes.Status400BadRequest, "application/json")
 		.ProducesProblem(StatusCodes.Status500InternalServerError);
 	}

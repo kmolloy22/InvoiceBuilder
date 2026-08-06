@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace InvoiceBuilder.Database.Configurations;
+namespace InvoiceBuilder.Infrastructure.Database.Configurations;
 
 public class CustomerEntityConfiguration : IEntityTypeConfiguration<Customer>
 {

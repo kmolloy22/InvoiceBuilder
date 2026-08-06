@@ -18,6 +18,6 @@
   <Folder Name="/Shared/" />
   <Folder Name="/Shared/Infrastructure/" />
   <Folder Name="/Shared/Infrastructure/Database/">
-    <Project Path="src/InvoiceBuilder.Database/InvoiceBuilder.Database.csproj" Id="5334a8de-0dac-40dd-8f24-245e45062610" />
+    <Project Path="src/InvoiceBuilder.Database/InvoiceBuilder.Infrastructure.Database.csproj" Id="5334a8de-0dac-40dd-8f24-245e45062610" />
   </Folder>
 </Solution>
