@@ -12,14 +12,14 @@ public static class GetByIdSenderEndpoint
 			IMediator mediator) =>
 
 		{
-			var dto = await mediator.Send(new GetSenderByIdCommand(Guid.Parse(id)));
+			var result = await mediator.Send(new GetSenderByIdCommand(Guid.Parse(id)));
 
-			if (dto.IsFailure)
+			if (result.IsFailure)
 			{
-				return Results.NotFound(dto.Error);
+				return Results.NotFound(result.Error);
 			}
 
-			return Results.Ok(dto);
+			return Results.Ok(result.Value);
 		})
 		.WithName("GetSender")
 		.WithSummary("Gets a sender by id.")

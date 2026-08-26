@@ -1,5 +1,6 @@
 using FluentValidation;
 using InvoiceBuilder.Api.Features.Customers;
+using InvoiceBuilder.Api.Features.Invoices;
 using InvoiceBuilder.Api.Features.Senders;
 using InvoiceBuilder.Api.Shared.ErrorHandling;
 using InvoiceBuilder.Application.Features.Customers;
@@ -29,6 +30,7 @@ var app = builder.Build();
 
 app.MapCustomers();
 app.MapSenders();
+app.MapInvoices();
 
 await app.InitializeDbAsync();
 
