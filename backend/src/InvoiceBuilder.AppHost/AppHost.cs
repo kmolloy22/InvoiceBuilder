@@ -15,4 +15,7 @@ builder.AddProject<Projects.InvoiceBuilder_Api>("invoicebuilder-api")
 	.WaitFor(database);
 
 
+builder.AddProject<Projects.InvoiceBuilder_Web>("invoicebuilder-web");
+
+
 await builder.Build().RunAsync();

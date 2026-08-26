@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\frontend\src\InvoiceBuilder.Web\InvoiceBuilder.Web.csproj" />
     <ProjectReference Include="..\InvoiceBuilder.Api\InvoiceBuilder.Api.csproj" />
   </ItemGroup>
 
