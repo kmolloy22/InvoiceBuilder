@@ -1,5 +1,6 @@
 ﻿using InvoiceBuilder.Application.Features.Customers;
 using InvoiceBuilder.Application.Features.Customers.Models.Get;
+using InvoiceBuilder.Application.Shared.Responses.Customers;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,12 +20,12 @@ public static class GetCustomersEndpoint
 				return Results.NotFound(result.Error);
 			}
 
-			return Results.Ok(result);
+			return Results.Ok(result.Value);
 		})
 		.WithName("GetCustomers")
 		.WithSummary("Lists customers with pagination support.")
 		.WithDescription("Returns a list of customers.")
-		//.Produces<PagedResult<GetCustomerDto>>(StatusCodes.Status200OK, "application/json")
+		.Produces<GetCustomerResult>(StatusCodes.Status200OK, "application/json")
 		.Produces<object>(StatusCodes.Status400BadRequest, "application/json")
 		.ProducesProblem(StatusCodes.Status500InternalServerError);
 	}

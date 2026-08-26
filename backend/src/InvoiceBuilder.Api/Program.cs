@@ -1,12 +1,18 @@
 using FluentValidation;
 using InvoiceBuilder.Api.Features.Customers;
 using InvoiceBuilder.Api.Features.Senders;
+using InvoiceBuilder.Api.Shared.ErrorHandling;
 using InvoiceBuilder.Application.Features.Customers;
 using InvoiceBuilder.Application.Features.Customers.Validation;
 using InvoiceBuilder.Database;
 using InvoiceBuilder.Database.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
+builder.Services.AddProblemDetails()
+	.AddExceptionHandler<GlobalExceptionHandler>()
+	.AddScoped<GlobalExceptionHandler>();
 
 builder.AddInvoiceBuilderNpgSql<InvoiceBuilderContext>("InvoiceBuilderDB");
 
@@ -26,4 +32,5 @@ app.MapSenders();
 
 await app.InitializeDbAsync();
 
+app.UseExceptionHandler();
 await app.RunAsync();

@@ -21,7 +21,7 @@ public static class UpdateSenderEndpoint
 				return Results.NotFound(result.Error);
 			}
 
-			return Results.Ok(result);
+			return Results.Ok(result.Value);
 		})
 		.AddEndpointFilter<ValidationFilter<UpdateSenderDto>>()
 		.WithName("UpdateSender")

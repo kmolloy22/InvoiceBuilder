@@ -19,7 +19,7 @@ public static class GetSendersEndpoint
 				return Results.NotFound(result.Error);
 			}
 
-			return Results.Ok(result);
+			return Results.Ok(result.Value);
 		})
 		.WithName("GetSenders")
 		.WithSummary("Lists senders with pagination support.")
