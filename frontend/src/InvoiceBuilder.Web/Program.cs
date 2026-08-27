@@ -1,4 +1,7 @@
 using InvoiceBuilder.Web.Components;
+using InvoiceBuilder.Web.Services;
+using Refit;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +10,19 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Configure API Client with service discovery
+var apiBaseUrl = builder.Configuration["services__invoicebuilder-api__http__0"]
+	?? builder.Configuration["ApiBaseUrl"]
+	?? throw new InvalidOperationException("API base URL is not configured. Please set 'ApiBaseUrl' in configuration.");
+
+builder.Services.AddRefitGeneratedClient<ICustomersApiClient>()
+	.ConfigureHttpClient(c =>
+	{
+		c.BaseAddress = new Uri(apiBaseUrl);
+		c.Timeout = TimeSpan.FromSeconds(30);
+	})
+	.AddStandardResilienceHandler();
 
 var app = builder.Build();
 

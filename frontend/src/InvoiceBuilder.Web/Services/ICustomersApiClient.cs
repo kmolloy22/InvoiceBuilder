@@ -1,11 +1,11 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using System.Threading.Tasks;
+﻿using InvoiceBuilder.Application.Features.Customers.Models.Get;
+using InvoiceBuilder.Application.Shared.Responses.Customers;
+using Refit;
 
-//namespace InvoiceBuilder.Web.Services;
+namespace InvoiceBuilder.Web.Services;
 
-//public interface ICustomersApiClient
-//{
-//}
+public interface ICustomersApiClient
+{
+	[Get("/api/customers")]
+	Task<GetCustomersResult> GetCustomersAsync([Query] GetCustomersDto request);
+}

@@ -1,0 +1,85 @@
+﻿@page "/customers"
+@rendermode InteractiveServer
+
+@using InvoiceBuilder.Application.Features.Customers.Models.Get
+@using InvoiceBuilder.Application.Shared.Responses.Customers
+@using InvoiceBuilder.Web.Services
+
+@inject ICustomersApiClient CustomersApiClient
+
+<h3>Customers</h3>
+
+@if (!string.IsNullOrWhiteSpace(_error))
+{
+    <p class="text-danger">@_error</p>
+}
+
+@if (_customers.Count == 0 && _loading)
+{
+    <p>Loading customers...</p>
+}
+else if (_customers.Count == 0)
+{
+    <p>No customers found.</p>
+}
+else
+{
+    <ul>
+        @foreach (var customer in _customers)
+        {
+            <li>
+                <strong>@customer.CompanyName</strong> - @customer.CustomerName (@customer.CustomerEmail)
+            </li>
+        }
+    </ul>
+}
+
+<button @onclick="() => LoadCustomers(true)" disabled="@(!_hasMorePages || _loading)">
+    @(_loading ? "Loading..." : "Load more")
+</button>
+
+@code {
+
+    private const int PageSize = 5;
+
+    private readonly List<CustomerListItem> _customers = new();
+    private Guid? _nextCursor;
+    private bool _hasMorePages = true;
+    private bool _loading;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+        => await LoadCustomers();
+
+    private async Task LoadCustomers(bool append = false)
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+
+            var request = new GetCustomersDto(
+                Cursor: append ? _nextCursor : null,
+                IsNextPage: append ? true : null,
+                PageSize: PageSize);
+
+            var result = await CustomersApiClient.GetCustomersAsync(request);
+
+            if (!append)
+                _customers.Clear();
+
+            _customers.AddRange(result.Items);
+            _nextCursor = result.NextCursor;
+            _hasMorePages = _nextCursor.HasValue;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load customers: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+}
