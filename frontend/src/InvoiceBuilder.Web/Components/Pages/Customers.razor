@@ -4,39 +4,66 @@
 @using InvoiceBuilder.Application.Features.Customers.Models.Get
 @using InvoiceBuilder.Application.Shared.Responses.Customers
 @using InvoiceBuilder.Web.Services
+@using MudBlazor
 
 @inject ICustomersApiClient CustomersApiClient
 
-<h3>Customers</h3>
+<PageTitle>Customers</PageTitle>
 
-@if (!string.IsNullOrWhiteSpace(_error))
-{
-    <p class="text-danger">@_error</p>
-}
+<MudContainer>
+    <MudText Typo="Typo.h4" class="mb-4">
+        Customer Management
+    </MudText>
 
-@if (_customers.Count == 0 && _loading)
-{
-    <p>Loading customers...</p>
-}
-else if (_customers.Count == 0)
-{
-    <p>No customers found.</p>
-}
-else
-{
-    <ul>
-        @foreach (var customer in _customers)
-        {
-            <li>
-                <strong>@customer.CompanyName</strong> - @customer.CustomerName (@customer.CustomerEmail)
-            </li>
-        }
-    </ul>
-}
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
 
-<button @onclick="() => LoadCustomers(true)" disabled="@(!_hasMorePages || _loading)">
-    @(_loading ? "Loading..." : "Load more")
-</button>
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @_error
+        </MudAlert>
+    }
+
+    <MudTable T="CustomerListItem"
+              Items="_customers"
+              Hover="true"
+              Striped="true"
+              Dense="true"
+              Loading="_loading">
+        <HeaderContent>
+            <MudTh>Company</MudTh>
+            <MudTh>Customer Name</MudTh>
+            <MudTh>Email</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Company">@context.CompanyName</MudTd>
+            <MudTd DataLabel="Customer Name">@context.CustomerName</MudTd>
+            <MudTd DataLabel="Email">@context.CustomerEmail</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            @if (!_loading)
+            {
+                <MudText>No customers found.</MudText>
+            }
+        </NoRecordsContent>
+    </MudTable>
+
+    @if (_hasMorePages)
+    {
+        <MudStack Row="true" Justify="Justify.Center" Class="mt-4">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       Disabled="_loading"
+                       OnClick="() => LoadCustomers(true)">
+                Load More
+            </MudButton>
+        </MudStack>
+    }
+
+</MudContainer>
 
 @code {
 

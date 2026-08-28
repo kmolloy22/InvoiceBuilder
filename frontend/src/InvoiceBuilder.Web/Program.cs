@@ -1,5 +1,6 @@
 using InvoiceBuilder.Web.Components;
 using InvoiceBuilder.Web.Services;
+using MudBlazor.Services;
 using Refit;
 
 
@@ -10,6 +11,8 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMudServices();
 
 // Configure API Client with service discovery
 var apiBaseUrl = builder.Configuration["services__invoicebuilder-api__http__0"]
