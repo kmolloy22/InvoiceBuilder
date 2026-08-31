@@ -107,26 +107,26 @@ Build succeeded.
 
 ## Phase 2: `CustomerFormDialog` component
 
-Status: Not started
+Status: Complete
 
-- [ ] Create `frontend/src/InvoiceBuilder.Web/Components/Customers/CustomerFormDialog.razor`
+- [x] Create `frontend/src/InvoiceBuilder.Web/Components/Customers/CustomerFormDialog.razor`
       (+ `_Imports` coverage) as a `MudDialog` with a `[CascadingParameter] IMudDialogInstance`.
-- [ ] `[Parameter] Guid? CustomerId` — `null` = create mode, non-null = edit mode.
-- [ ] On `OnInitializedAsync`: edit mode → `await CustomersApiClient.GetCustomerByIdAsync(CustomerId.Value)`
+- [x] `[Parameter] Guid? CustomerId` — `null` = create mode, non-null = edit mode.
+- [x] On `OnInitializedAsync`: edit mode → `await CustomersApiClient.GetCustomerByIdAsync(CustomerId.Value)`
       and populate a local editable model; show a `MudProgressCircular` while loading; on
       fetch failure show error snackbar and `MudDialog.Cancel()`.
-- [ ] `MudForm` with `MudTextField` bindings for all 6 fields; client-side `required`
+- [x] `MudForm` with `MudTextField` bindings for all 6 fields; client-side `required`
       validation and an email rule on `CustomerEmail` mirroring `CreateCustomerDtoValidator`.
-- [ ] Submit: build `CreateCustomerDto` / `UpdateCustomerDto`; call the matching client
+- [x] Submit: build `CreateCustomerDto` / `UpdateCustomerDto`; call the matching client
       method; on success `Snackbar.Add("Customer saved", Severity.Success)` and
       `MudDialog.Close(DialogResult.Ok(<saved row model>))`.
-- [ ] Catch `Refit.ApiException`: if `StatusCode == 400`, deserialize body to
+- [x] Catch `Refit.ApiException`: if `StatusCode == 400`, deserialize body to
       `HttpValidationProblemDetails` (or `ValidationProblemDetails`), map
       `errors[field]` messages into per-field `MudForm` errors via a
       `Func<string,IEnumerable<string>>` validation hook or a manual error dictionary;
       also `Snackbar.Add(..., Severity.Error)`; keep dialog open. Non-400 → generic
       error snackbar, keep dialog open.
-- [ ] Disable the Save button and show a spinner while the request is in flight.
+- [x] Disable the Save button and show a spinner while the request is in flight.
 
 ### Verification Plan
 
@@ -137,7 +137,63 @@ Status: Not started
 
 ### Phase Summary
 
-_(write when phase completes)_
+Done 2026-08-31.
+
+**What was done:** Added
+`frontend/src/InvoiceBuilder.Web/Components/Customers/CustomerFormDialog.razor`
+— a self-contained `MudDialog` used for both create and edit:
+- `[Parameter] Guid? CustomerId` selects mode (`IsEdit => CustomerId.HasValue`).
+- Edit mode fetches the full record in `OnInitializedAsync` via
+  `GetCustomerByIdAsync`, shows a `MudProgressCircular` while `_loading`, and on
+  failure raises an error snackbar + `MudDialog.Cancel()`.
+- Private `CustomerFormModel` (6 strings) bound to six `MudTextField`s inside a
+  `MudForm` (`@ref _form`). Client validation: `Required` on all, `EmailRule`
+  (regex) on `CustomerEmail`, mirroring `CreateCustomerDtoValidator`.
+- `Submit()` runs `await _form.ValidateAsync()`; on success calls
+  `CreateCustomerAsync` / `UpdateCustomerAsync`, shows "Customer saved" snackbar,
+  and closes with `DialogResult.Ok(CustomerListItem)` so Phase 3 can splice the
+  row into the list.
+- `catch (ApiException ex) when (ex.StatusCode == BadRequest)` → `MapValidationErrors`
+  parses the RFC 7807 body (`JsonDocument`, reads `errors` object) into a
+  `_serverErrors` dict keyed by PascalCase field name; each `MudTextField` binds
+  `Error`/`ErrorText` from that dict. `_serverErrors` is cleared at the top of every
+  `Submit`. Non-400 `ApiException` and generic `Exception` → error snackbar; dialog
+  stays open in all failure paths.
+- Save button disabled + spinner while `_saving`; Cancel disabled while saving.
+
+**Key decisions / deviations:**
+- Used **manual `Error`/`ErrorText` binding** for server-side errors (per-field
+  dict) rather than a `Func<string,IEnumerable<string>>` validation hook — simpler
+  and keeps client vs. server error sources separate. Acceptable per the plan's
+  "manual error dictionary" option.
+- `MudForm.Validate()` is `[Obsolete]`-as-error in MudBlazor 9.9.0 →
+  used `ValidateAsync()`.
+- Create response has no field echo, so the returned `CustomerListItem` for create
+  is built from `Guid.Parse(created.Id)` + submitted form values; edit uses the
+  full `UpdateCustomerResult`.
+- No `_Imports` change needed — `Components/_Imports.razor` already covers MudBlazor;
+  component-specific `@using`s (Refit, the DTO namespaces, `System.Text.Json`,
+  `System.Net`) are declared in the file.
+- Server error keys: `ValidationFilter<T>` groups by `PropertyName`, so keys arrive
+  as `CompanyName`, `CustomerEmail`, etc. — a direct match to model property names,
+  no remapping needed.
+
+**Not done here (belongs to Phase 3):** the dialog is not yet opened from anywhere;
+`Customers.razor` is untouched.
+
+**Verification result:**
+```
+$ dotnet build frontend/src/InvoiceBuilder.Web/InvoiceBuilder.Web.csproj -c Release --no-incremental --nologo
+Build succeeded.
+    19 Warning(s)   (all pre-existing backend CA1000/CA1014/CA1852; none in the new file)
+    0 Error(s)
+
+$ grep -n "GetCustomerByIdAsync\|ApiException\|DialogResult.Ok" .../CustomerFormDialog.razor
+111:  var customer = await CustomersApiClient.GetCustomerByIdAsync(CustomerId!.Value);
+181:  MudDialog.Close(DialogResult.Ok(row));
+183:  catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+188:  catch (ApiException ex)
+```
 
 ## Phase 3: Wire actions into `Customers.razor`
 

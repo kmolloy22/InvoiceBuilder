@@ -1,0 +1,268 @@
+@using System.Net
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@using InvoiceBuilder.Application.Features.Customers.Models.Create
+@using InvoiceBuilder.Application.Features.Customers.Models.Update
+@using InvoiceBuilder.Application.Shared.Responses.Customers
+@using InvoiceBuilder.Web.Services
+@using Refit
+
+@inject ICustomersApiClient CustomersApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <div class="d-flex justify-center pa-8">
+                <MudProgressCircular Indeterminate="true" />
+            </div>
+        }
+        else
+        {
+            <MudForm @ref="_form" Model="_model">
+                <MudTextField @bind-Value="_model.CompanyName"
+                              Label="Company Name"
+                              Immediate="false"
+                              OnlyValidateIfDirty="false"
+                              Validation="@(new Func<string, string?>(v => Required(v)))"
+                              Error="_serverErrors.ContainsKey(nameof(_model.CompanyName))"
+                              ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CompanyName))" />
+
+                <MudTextField @bind-Value="_model.CustomerName"
+                              Label="Customer Name"
+                              Validation="@(new Func<string, string?>(v => Required(v)))"
+                              Error="_serverErrors.ContainsKey(nameof(_model.CustomerName))"
+                              ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CustomerName))" />
+
+                <MudTextField @bind-Value="_model.CustomerAddress"
+                              Label="Address"
+                              Lines="2"
+                              Validation="@(new Func<string, string?>(v => Required(v)))"
+                              Error="_serverErrors.ContainsKey(nameof(_model.CustomerAddress))"
+                              ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CustomerAddress))" />
+
+                <MudTextField @bind-Value="_model.PostalCode"
+                              Label="Postal Code"
+                              Validation="@(new Func<string, string?>(v => Required(v)))"
+                              Error="_serverErrors.ContainsKey(nameof(_model.PostalCode))"
+                              ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.PostalCode))" />
+
+                <MudTextField @bind-Value="_model.CustomerEmail"
+                              Label="Email"
+                              InputType="InputType.Email"
+                              Validation="@(new Func<string, string?>(v => EmailRule(v)))"
+                              Error="_serverErrors.ContainsKey(nameof(_model.CustomerEmail))"
+                              ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CustomerEmail))" />
+
+                <MudTextField @bind-Value="_model.CustomerTaxVatId"
+                              Label="Tax / VAT ID"
+                              Validation="@(new Func<string, string?>(v => Required(v)))"
+                              Error="_serverErrors.ContainsKey(nameof(_model.CustomerTaxVatId))"
+                              ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CustomerTaxVatId))" />
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="_loading || _saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Saving</MudText>
+            }
+            else
+            {
+                <MudText>Save</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Null = create mode; non-null = edit the customer with this id.</summary>
+    [Parameter]
+    public Guid? CustomerId { get; set; }
+
+    private readonly CustomerFormModel _model = new();
+    private readonly Dictionary<string, string> _serverErrors = new();
+    private MudForm _form = default!;
+    private bool _loading;
+    private bool _saving;
+
+    private bool IsEdit => CustomerId.HasValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsEdit)
+        {
+            return;
+        }
+
+        try
+        {
+            _loading = true;
+            var customer = await CustomersApiClient.GetCustomerByIdAsync(CustomerId!.Value);
+            _model.CompanyName = customer.CompanyName;
+            _model.CustomerName = customer.CustomerName;
+            _model.CustomerAddress = customer.CustomerAddress;
+            _model.PostalCode = customer.PostalCode;
+            _model.CustomerEmail = customer.CustomerEmail;
+            _model.CustomerTaxVatId = customer.CustomerTaxVatId;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Could not load customer: {ex.Message}", Severity.Error);
+            MudDialog.Cancel();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task Submit()
+    {
+        _serverErrors.Clear();
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        try
+        {
+            _saving = true;
+            CustomerListItem row;
+
+            if (IsEdit)
+            {
+                var updated = await CustomersApiClient.UpdateCustomerAsync(
+                    CustomerId!.Value,
+                    new UpdateCustomerDto(
+                        _model.CompanyName,
+                        _model.CustomerName,
+                        _model.CustomerAddress,
+                        _model.PostalCode,
+                        _model.CustomerEmail,
+                        _model.CustomerTaxVatId));
+
+                row = new CustomerListItem(
+                    updated.Id,
+                    updated.CompanyName,
+                    updated.CustomerName,
+                    updated.CustomerEmail);
+            }
+            else
+            {
+                var created = await CustomersApiClient.CreateCustomerAsync(
+                    new CreateCustomerDto(
+                        _model.CompanyName,
+                        _model.CustomerName,
+                        _model.CustomerAddress,
+                        _model.PostalCode,
+                        _model.CustomerEmail,
+                        _model.CustomerTaxVatId));
+
+                row = new CustomerListItem(
+                    Guid.Parse(created.Id),
+                    _model.CompanyName,
+                    _model.CustomerName,
+                    _model.CustomerEmail);
+            }
+
+            Snackbar.Add("Customer saved", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(row));
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            MapValidationErrors(ex.Content);
+            Snackbar.Add("Please fix the highlighted fields", Severity.Error);
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Save failed ({(int)ex.StatusCode} {ex.ReasonPhrase})", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    /// <summary>
+    /// Parses an RFC 7807 ValidationProblemDetails body (as produced by
+    /// <c>Results.ValidationProblem</c>) and maps its <c>errors</c> dictionary onto
+    /// the matching form fields. Keys come back PascalCased to match the DTO/model
+    /// property names.
+    /// </summary>
+    private void MapValidationErrors(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(content);
+            if (!doc.RootElement.TryGetProperty("errors", out var errors)
+                || errors.ValueKind != JsonValueKind.Object)
+            {
+                return;
+            }
+
+            foreach (var field in errors.EnumerateObject())
+            {
+                var message = field.Value.ValueKind == JsonValueKind.Array
+                    ? string.Join(" ", field.Value.EnumerateArray().Select(e => e.GetString()))
+                    : field.Value.GetString();
+
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    _serverErrors[field.Name] = message!;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Non-JSON / unexpected body – the generic snackbar already covers it.
+        }
+    }
+
+    private static string? Required(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "Required" : null;
+
+    private static string? EmailRule(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Required";
+        }
+
+        return Regex.IsMatch(value, @"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+            ? null
+            : "Enter a valid email address";
+    }
+
+    private sealed class CustomerFormModel
+    {
+        public string CompanyName { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+        public string CustomerAddress { get; set; } = string.Empty;
+        public string PostalCode { get; set; } = string.Empty;
+        public string CustomerEmail { get; set; } = string.Empty;
+        public string CustomerTaxVatId { get; set; } = string.Empty;
+    }
+}
