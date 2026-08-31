@@ -22,6 +22,9 @@
   <Folder Name="/Shared/Infrastructure/Database/">
     <Project Path="backend/src/InvoiceBuilder.Database/InvoiceBuilder.Infrastructure.Database.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="backend/tests/InvoiceBuilder.Api.IntegrationTests/InvoiceBuilder.Api.IntegrationTests.csproj" />
+  </Folder>
   <Folder Name="/Web/">
     <Project Path="frontend/src/InvoiceBuilder.Web/InvoiceBuilder.Web.csproj" />
   </Folder>

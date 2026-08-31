@@ -1,19 +1,32 @@
-﻿@page "/customers"
+@page "/customers"
 @rendermode InteractiveServer
 
 @using InvoiceBuilder.Application.Features.Customers.Models.Get
 @using InvoiceBuilder.Application.Shared.Responses.Customers
+@using InvoiceBuilder.Web.Components.Customers
 @using InvoiceBuilder.Web.Services
 @using MudBlazor
+@using Refit
 
 @inject ICustomersApiClient CustomersApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <PageTitle>Customers</PageTitle>
 
 <MudContainer>
-    <MudText Typo="Typo.h4" class="mb-4">
-        Customer Management
-    </MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h4">
+            Customer Management
+        </MudText>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="_loading"
+                   OnClick="OpenCreateDialog">
+            New Customer
+        </MudButton>
+    </MudStack>
 
     @if (_loading)
     {
@@ -37,11 +50,26 @@
             <MudTh>Company</MudTh>
             <MudTh>Customer Name</MudTh>
             <MudTh>Email</MudTh>
+            <MudTh Style="text-align:right">Actions</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Company">@context.CompanyName</MudTd>
             <MudTd DataLabel="Customer Name">@context.CustomerName</MudTd>
             <MudTd DataLabel="Email">@context.CustomerEmail</MudTd>
+            <MudTd DataLabel="Actions" Style="text-align:right">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Size="Size.Small"
+                               Color="Color.Primary"
+                               Disabled="_loading"
+                               aria-label="Edit customer"
+                               OnClick="() => OpenEditDialog(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small"
+                               Color="Color.Error"
+                               Disabled="_loading"
+                               aria-label="Delete customer"
+                               OnClick="() => DeleteCustomer(context)" />
+            </MudTd>
         </RowTemplate>
         <NoRecordsContent>
             @if (!_loading)
@@ -106,6 +134,69 @@
         finally
         {
             _loading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var dialog = await DialogService.ShowAsync<CustomerFormDialog>("New Customer");
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: CustomerListItem created })
+        {
+            _customers.Insert(0, created);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenEditDialog(CustomerListItem item)
+    {
+        var parameters = new DialogParameters<CustomerFormDialog>
+        {
+            { x => x.CustomerId, item.Id }
+        };
+
+        var dialog = await DialogService.ShowAsync<CustomerFormDialog>("Edit Customer", parameters);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: CustomerListItem updated })
+        {
+            var index = _customers.FindIndex(c => c.Id == updated.Id);
+            if (index >= 0)
+            {
+                _customers[index] = updated;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteCustomer(CustomerListItem item)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Delete customer",
+            $"Delete \"{item.CompanyName}\"? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (!confirmed.GetValueOrDefault())
+        {
+            return;
+        }
+
+        try
+        {
+            await CustomersApiClient.DeleteCustomerAsync(item.Id);
+            _customers.RemoveAll(c => c.Id == item.Id);
+            Snackbar.Add("Customer deleted", Severity.Success);
+            StateHasChanged();
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Delete failed ({(int)ex.StatusCode} {ex.ReasonPhrase})", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
         }
     }
 

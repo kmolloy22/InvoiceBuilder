@@ -36,3 +36,13 @@ await app.InitializeDbAsync();
 
 app.UseExceptionHandler();
 await app.RunAsync();
+
+/// <summary>
+/// Exposes the implicit top-level <c>Program</c> class to the integration test
+/// project via <c>WebApplicationFactory&lt;Program&gt;</c>. The non-public
+/// constructor keeps it non-instantiable.
+/// </summary>
+public partial class Program
+{
+	protected Program() { }
+}
