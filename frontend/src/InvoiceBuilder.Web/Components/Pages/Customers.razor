@@ -79,17 +79,23 @@
         </NoRecordsContent>
     </MudTable>
 
-    @if (_hasMorePages)
-    {
-        <MudStack Row="true" Justify="Justify.Center" Class="mt-4">
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Primary"
-                       Disabled="_loading"
-                       OnClick="() => LoadCustomers(true)">
-                Load More
-            </MudButton>
-        </MudStack>
-    }
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mt-4">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.ChevronLeft"
+                   Disabled="_loading || !_hasPreviousPage"
+                   OnClick="LoadPreviousPage">
+            Previous
+        </MudButton>
+        <MudText Typo="Typo.body2">Page @(_pageNumber)</MudText>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   EndIcon="@Icons.Material.Filled.ChevronRight"
+                   Disabled="_loading || !_hasNextPage"
+                   OnClick="LoadNextPage">
+            Next
+        </MudButton>
+    </MudStack>
 
 </MudContainer>
 
@@ -99,14 +105,23 @@
 
     private readonly List<CustomerListItem> _customers = new();
     private Guid? _nextCursor;
-    private bool _hasMorePages = true;
+    private Guid? _previousCursor;
+    private bool _hasNextPage;
+    private bool _hasPreviousPage;
+    private int _pageNumber = 1;
     private bool _loading;
     private string? _error;
 
     protected override async Task OnInitializedAsync()
         => await LoadCustomers();
 
-    private async Task LoadCustomers(bool append = false)
+    private Task LoadNextPage()
+        => LoadCustomers(_nextCursor, isNextPage: true, _pageNumber + 1);
+
+    private Task LoadPreviousPage()
+        => LoadCustomers(_previousCursor, isNextPage: false, _pageNumber - 1);
+
+    private async Task LoadCustomers(Guid? cursor = null, bool? isNextPage = null, int pageNumber = 1)
     {
         try
         {
@@ -114,18 +129,19 @@
             _error = null;
 
             var request = new GetCustomersDto(
-                Cursor: append ? _nextCursor : null,
-                IsNextPage: append ? true : null,
+                Cursor: cursor,
+                IsNextPage: isNextPage,
                 PageSize: PageSize);
 
             var result = await CustomersApiClient.GetCustomersAsync(request);
 
-            if (!append)
-                _customers.Clear();
-
+            _customers.Clear();
             _customers.AddRange(result.Items);
             _nextCursor = result.NextCursor;
-            _hasMorePages = _nextCursor.HasValue;
+            _previousCursor = result.PreviousCursor;
+            _hasNextPage = result.NextCursor.HasValue;
+            _hasPreviousPage = result.PreviousCursor.HasValue;
+            _pageNumber = pageNumber;
         }
         catch (Exception ex)
         {
