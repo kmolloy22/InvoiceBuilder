@@ -10,7 +10,7 @@
 @inject ICustomersApiClient CustomersApiClient
 @inject ISnackbar Snackbar
 
-<MudDialog>
+@* <MudDialog>
     <DialogContent>
         @if (_loading)
         {
@@ -80,6 +80,118 @@
             }
         </MudButton>
     </DialogActions>
+</MudDialog> *@
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <div class="d-flex justify-center pa-8">
+                <MudProgressCircular Indeterminate="true" />
+            </div>
+        }
+        else
+        {
+            <MudForm @ref="_form" Model="_model" @bind-IsValid="_isValid">
+                <MudGrid>
+                    <!-- Customer Details -->
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h6" Class="mb-2">Customer Details</MudText>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_model.CompanyName"
+                                      Label="Company Name"
+                                      Required="true"
+                                      RequiredError="Company name is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.CompanyName))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CompanyName))" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_model.CustomerName"
+                                      Label="Customer Name"
+                                      Required="true"
+                                      RequiredError="Customer name is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.CustomerName))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CustomerName))" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_model.CustomerTaxVatId"
+                                      Label="Tax / VAT ID"
+                                      Required="true"
+                                      RequiredError="Tax / VAT ID is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.CustomerTaxVatId))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CustomerTaxVatId))" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_model.CustomerEmail"
+                                      Label="Email"
+                                      InputType="InputType.Email"
+                                      Variant="Variant.Outlined"
+                                      Validation="@(new Func<string, string?>(v => EmailRule(v)))"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.CustomerEmail))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CustomerEmail))" />
+                    </MudItem>
+
+                    <!-- Address -->
+                    <MudItem xs="12">
+                        <MudDivider Class="my-2" />
+                        <MudText Typo="Typo.h6" Class="mb-2">Address</MudText>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_model.CustomerAddress"
+                                      Label="Address"
+                                      Lines="2"
+                                      Required="true"
+                                      RequiredError="Address is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.CustomerAddress))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.CustomerAddress))" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_model.PostalCode"
+                                      Label="Postal Code"
+                                      Required="true"
+                                      RequiredError="Postal code is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.PostalCode))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.PostalCode))" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-4">@_errorMessage</MudAlert>
+            }
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="_loading || _saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Saving</MudText>
+            }
+            else
+            {
+                <MudText>Save</MudText>
+            }
+        </MudButton>
+    </DialogActions>
 </MudDialog>
 
 @code {
@@ -97,6 +209,9 @@
     private bool _saving;
 
     private bool IsEdit => CustomerId.HasValue;
+
+    private bool _isValid;
+    private string? _errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -130,6 +245,7 @@
     private async Task Submit()
     {
         _serverErrors.Clear();
+        _errorMessage = null;
         await _form.ValidateAsync();
         if (!_form.IsValid)
         {
@@ -192,6 +308,7 @@
         catch (Exception ex)
         {
             Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
+            _errorMessage = $"Save failed: {ex.Message}";
         }
         finally
         {
@@ -241,8 +358,6 @@
         }
     }
 
-    private static string? Required(string? value)
-        => string.IsNullOrWhiteSpace(value) ? "Required" : null;
 
     private static string? EmailRule(string? value)
     {
