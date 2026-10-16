@@ -42,14 +42,17 @@ from line items, and export them (PDF) for delivery.
 | Area                    | API           | Frontend      |
 | ----------------------- | ------------- | ------------- |
 | Customers               | Full CRUD     | Full CRUD + Previous/Next paging |
-| Senders                 | Full CRUD     | —             |
+| Senders                 | Full CRUD     | Full CRUD + Previous/Next paging |
 | Invoices                | Full CRUD     | —             |
 | Line items              | Via Invoice   | —             |
 
 - EF migrations: `InitialCreate`, `AddInvoice`.
-- Tests: 8 API integration tests, Customers endpoints only (POST, GET by id,
-  PUT, DELETE: happy paths, validation 400, 404s). No Senders/Invoices tests,
-  no Application handler tests, no frontend tests (`frontend/tests` is empty).
+- Tests: 18 API integration tests — Customers (8: POST, GET by id, PUT, DELETE;
+  happy paths, validation 400, 404s) and Senders (10: the same plus cursor paging
+  and 409 on deleting a sender that has invoices). No Invoices tests, no
+  Application handler tests, no frontend tests (`frontend/tests` is empty).
+- `DELETE /api/senders/{id}` returns 409 when invoices reference the sender
+  (`plans/senders-ui.md`).
 - Customers UI manually smoke-tested end to end on 2026-10-16 (create,
   validation errors, edit, delete, paging) — all passed.
 - Build: a NuGet audit failure (`System.Security.Cryptography.Xml`/`Pkcs`
@@ -68,11 +71,11 @@ from line items, and export them (PDF) for delivery.
 - [x] Customers list Previous/Next paging
 - [x] API integration test project + Customers endpoint tests
 - [ ] Merge vulnerable-package fix (`fix/vulnerable-packages`) and confirm CI is green
-- [ ] Senders UI (list + create/edit/delete)
+- [x] Senders UI (list + create/edit/delete), incl. Senders API integration tests (see `plans/senders-ui.md`)
 - [ ] Invoice builder UI (select customer + sender, add line items, live totals)
 - [ ] Invoice list + detail view
 - [ ] Invoice PDF export
-- [ ] More tests: Senders/Invoices API integration tests, Application handler tests
+- [ ] More tests: Invoices API integration tests, Application handler tests
 - [ ] Authentication / authorization
 - [ ] Deployment pipeline
 
@@ -86,6 +89,11 @@ from line items, and export them (PDF) for delivery.
 ## Known issues / follow-ups
 
 - Customer form: the Email field is validated as required but has no `*` marker.
+- Deleting a customer that has invoices should fail the same way senders used to
+  (`Invoice → Customer` is `Restrict`, no guard in `DeleteCustomerHandler`, expected
+  to surface as a 500). Fixed for senders only; not yet fixed or verified for customers.
+- Sender/Customer lists are ordered by a random `Guid` `Id`, not by name, so row
+  order is arbitrary (stable across pages).
 - After creating a customer, the new row is inserted at the top of the loaded
   page, so the page can briefly show more rows than the page size until the
   user navigates (consequence of the in-place list update).
