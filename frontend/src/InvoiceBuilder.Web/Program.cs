@@ -19,13 +19,17 @@ var apiBaseUrl = builder.Configuration["services__invoicebuilder-api__http__0"]
 	?? builder.Configuration["ApiBaseUrl"]
 	?? throw new InvalidOperationException("API base URL is not configured. Please set 'ApiBaseUrl' in configuration.");
 
-builder.Services.AddRefitGeneratedClient<ICustomersApiClient>()
-	.ConfigureHttpClient(c =>
-	{
-		c.BaseAddress = new Uri(apiBaseUrl);
-		c.Timeout = TimeSpan.FromSeconds(30);
-	})
-	.AddStandardResilienceHandler();
+void ConfigureApiClient(IHttpClientBuilder clientBuilder) =>
+	clientBuilder
+		.ConfigureHttpClient(c =>
+		{
+			c.BaseAddress = new Uri(apiBaseUrl);
+			c.Timeout = TimeSpan.FromSeconds(30);
+		})
+		.AddStandardResilienceHandler();
+
+ConfigureApiClient(builder.Services.AddRefitGeneratedClient<ICustomersApiClient>());
+ConfigureApiClient(builder.Services.AddRefitGeneratedClient<ISendersApiClient>());
 
 var app = builder.Build();
 
