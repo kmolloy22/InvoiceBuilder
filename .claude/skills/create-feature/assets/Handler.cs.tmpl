@@ -1,0 +1,32 @@
+using InvoiceBuilder.Application.Features.{{Feature}}.Models.{{Op}};
+using InvoiceBuilder.Application.Shared.Responses.{{Feature}};
+using InvoiceBuilder.Database;
+using InvoiceBuilder.Domain.Entities;
+using InvoiceBuilder.Domain.Results;
+using MediatR;
+
+namespace InvoiceBuilder.Application.Features.{{Feature}};
+
+public record {{Op}}{{Entity}}Command({{Op}}{{Entity}}Dto Dto) : IRequest<Result<{{Op}}{{Entity}}Result>>;
+
+internal sealed class {{Op}}{{Entity}}Handler : IRequestHandler<{{Op}}{{Entity}}Command, Result<{{Op}}{{Entity}}Result>>
+{
+	private readonly InvoiceBuilderContext _dbContext;
+
+	public {{Op}}{{Entity}}Handler(InvoiceBuilderContext dbContext)
+	{
+		_dbContext = dbContext;
+	}
+
+	public async Task<Result<{{Op}}{{Entity}}Result>> Handle({{Op}}{{Entity}}Command cmd, CancellationToken cancellationToken)
+	{
+		var entity = {{Entity}}.Create(
+{{CreateArgs}});
+
+		await _dbContext.{{Feature}}.AddAsync(entity, cancellationToken);
+		await _dbContext.SaveChangesAsync(cancellationToken);
+
+		return Result<{{Op}}{{Entity}}Result>.Success(
+			new {{Op}}{{Entity}}Result(entity.Id, entity.CreatedAt));
+	}
+}

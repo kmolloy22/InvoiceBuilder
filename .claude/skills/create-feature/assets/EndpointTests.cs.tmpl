@@ -1,0 +1,42 @@
+// Snippet, not a compilable file. Append to the feature's existing tests class
+// (backend/tests/InvoiceBuilder.Api.IntegrationTests/{{Feature}}EndpointsTests.cs)
+// or, for a brand-new feature, create that class beside CustomersEndpointsTests.cs
+// with `IClassFixture<CustomerApiFactory>` and `_client = factory.CreateClient();`.
+// Keep the sibling file's indentation (the test project uses 4 spaces).
+//
+// Replace the placeholder field values with realistic ones for {{Entity}}.
+// Use unique values (Guid.NewGuid()) so tests never collide with the seeded data
+// or with each other - the fixture shares one database across the whole class.
+
+    private static {{Op}}{{Entity}}Dto New{{Op}}{{Entity}}Dto() => new(
+{{TestDtoArgs}});
+
+    [Fact]
+    public async Task Post_{{OpLower}}_{{EntityLower}}_returns_201_and_location()
+    {
+        var response = await _client.PostAsJsonAsync("/api/{{RouteSegment}}", New{{Op}}{{Entity}}Dto());
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<{{Op}}{{Entity}}ResponseDto>();
+        Assert.NotNull(body);
+        Assert.True(Guid.TryParse(body!.Id, out _));
+        Assert.Equal($"/api/{{RouteSegment}}/{body.Id}", body.Location);
+        Assert.Equal(body.Location, response.Headers.Location?.ToString());
+    }
+
+    [Fact]
+    public async Task Post_{{OpLower}}_{{EntityLower}}_invalid_returns_400_with_validation_errors()
+    {
+        // Blank one or more required fields (see {{Op}}{{Entity}}DtoValidator) and
+        // assert the PascalCase property names appear in Errors.Keys.
+        var invalid = New{{Op}}{{Entity}}Dto() with { {{FirstFieldName}} = default! };
+
+        var response = await _client.PostAsJsonAsync("/api/{{RouteSegment}}", invalid);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await response.Content.ReadFromJsonAsync<HttpValidationProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("{{FirstFieldName}}", problem!.Errors.Keys);
+    }
