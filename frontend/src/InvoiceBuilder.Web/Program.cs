@@ -30,6 +30,7 @@ void ConfigureApiClient(IHttpClientBuilder clientBuilder) =>
 
 ConfigureApiClient(builder.Services.AddRefitGeneratedClient<ICustomersApiClient>());
 ConfigureApiClient(builder.Services.AddRefitGeneratedClient<ISendersApiClient>());
+ConfigureApiClient(builder.Services.AddRefitGeneratedClient<IInvoicesApiClient>());
 
 var app = builder.Build();
 

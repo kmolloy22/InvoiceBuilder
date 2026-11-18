@@ -1,6 +1,6 @@
 # InvoiceBuilder — Project Plan
 
-_Last updated: 2026-10-16_
+_Last updated: 2026-11-18_
 
 This document is the single source of truth for InvoiceBuilder's direction.
 Read it before starting work; update it whenever scope, milestones, or
@@ -43,22 +43,32 @@ from line items, and export them (PDF) for delivery.
 | ----------------------- | ------------- | ------------- |
 | Customers               | Full CRUD     | Full CRUD + Previous/Next paging |
 | Senders                 | Full CRUD     | Full CRUD + Previous/Next paging |
-| Invoices                | Full CRUD     | —             |
-| Line items              | Via Invoice   | —             |
+| Invoices                | Full CRUD     | Create (builder UI); no list/detail/edit UI yet |
+| Line items              | Via Invoice   | Create only, via the invoice builder |
 
 - EF migrations: `InitialCreate`, `AddInvoice`.
-- Tests: 18 API integration tests — Customers (8: POST, GET by id, PUT, DELETE;
-  happy paths, validation 400, 404s) and Senders (10: the same plus cursor paging
-  and 409 on deleting a sender that has invoices). No Invoices tests, no
-  Application handler tests, no frontend tests (`frontend/tests` is empty).
-- `DELETE /api/senders/{id}` returns 409 when invoices reference the sender
-  (`plans/senders-ui.md`).
+- Tests: 19 API integration tests — Customers (9: POST, GET by id, PUT, DELETE;
+  happy paths, validation 400, 404s, and 409 on deleting a customer that has
+  invoices) and Senders (10: the same plus cursor paging). No Invoices tests,
+  no Application handler tests, no frontend tests (`frontend/tests` is empty).
+- `DELETE /api/customers/{id}` and `DELETE /api/senders/{id}` both return 409
+  when invoices reference the row (`plans/senders-ui.md`; Customers parity
+  added alongside the invoice builder work).
+- Invoice builder UI at `/invoices/new` (`Components/Pages/NewInvoice.razor`):
+  customer/sender pickers (paged through client-side to list all rows),
+  editable line items with live subtotal/tax/total, submits via a new
+  `IInvoicesApiClient`. Manually smoke-tested end to end in the browser
+  (create, add/remove line items, submit, form reset) on 2026-11-18 — passed.
+  No edit support yet (see known issues).
 - Customers UI manually smoke-tested end to end on 2026-10-16 (create,
   validation errors, edit, delete, paging) — all passed.
-- Build: a NuGet audit failure (`System.Security.Cryptography.Xml`/`Pkcs`
-  advisories, escalated by `TreatWarningsAsErrors`) broke restore/build for all
-  projects. Fix is on branch `fix/vulnerable-packages` (pending PR); until it is
-  merged, `master` does not build and CI will fail.
+- Build: the `System.Security.Cryptography.Xml`/`Pkcs` NuGet audit failure is
+  fixed on `master`. A *new*, unrelated NuGet audit failure now blocks
+  `InvoiceBuilder.AppHost` specifically (`Aspire.Dashboard.Sdk.win-x64`,
+  `Aspire.Hosting`, `Aspire.Hosting.AppHost`, `MessagePack` advisories) —
+  `dotnet build InvoiceBuilder.slnx` fails, but every other project (Api, Web,
+  Application, Database, Domain, tests) builds and tests clean in isolation.
+  Needs the same audit-fix treatment as the previous Cryptography.Xml issue.
 
 ## Milestones
 
@@ -70,9 +80,11 @@ from line items, and export them (PDF) for delivery.
 - [x] Customer create/edit/delete UI (see `plans/customer-crud-ui.md`)
 - [x] Customers list Previous/Next paging
 - [x] API integration test project + Customers endpoint tests
-- [ ] Merge vulnerable-package fix (`fix/vulnerable-packages`) and confirm CI is green
+- [x] Merge vulnerable-package fix (`fix/vulnerable-packages`) — a *new* unrelated
+      Aspire/MessagePack audit failure now blocks `InvoiceBuilder.AppHost`; see
+      Current status.
 - [x] Senders UI (list + create/edit/delete), incl. Senders API integration tests (see `plans/senders-ui.md`)
-- [ ] Invoice builder UI (select customer + sender, add line items, live totals)
+- [x] Invoice builder UI (select customer + sender, add line items, live totals) — create only, no edit yet
 - [ ] Invoice list + detail view
 - [ ] Invoice PDF export
 - [ ] More tests: Invoices API integration tests, Application handler tests
@@ -89,9 +101,16 @@ from line items, and export them (PDF) for delivery.
 ## Known issues / follow-ups
 
 - Customer form: the Email field is validated as required but has no `*` marker.
-- Deleting a customer that has invoices should fail the same way senders used to
-  (`Invoice → Customer` is `Restrict`, no guard in `DeleteCustomerHandler`, expected
-  to surface as a 500). Fixed for senders only; not yet fixed or verified for customers.
+- `UpdateInvoiceDto` has no `LineItems` field — editing an invoice cannot change
+  its line items via the API as it stands today. The invoice builder UI only
+  supports create for this reason; building an edit UI needs this DTO (and
+  `UpdateInvoiceHandler`) extended first.
+- `CreateInvoiceEndpoint` always returns `400 BadRequest` on handler failure,
+  even for what are really 409 (duplicate `InvoiceNumber`) or 404 (unknown
+  `CustomerId`/`SenderId`) cases — unlike Senders/Customers delete, which
+  branch on the error type. The builder UI's `HandleBadRequest` copes by
+  reading the `ResultError` body either way, but the API response code itself
+  is inconsistent with the rest of the app's conventions.
 - Sender/Customer lists are ordered by a random `Guid` `Id`, not by name, so row
   order is arbitrary (stable across pages).
 - After creating a customer, the new row is inserted at the top of the loaded
