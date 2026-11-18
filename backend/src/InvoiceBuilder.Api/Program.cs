@@ -7,6 +7,9 @@ using InvoiceBuilder.Application.Features.Customers;
 using InvoiceBuilder.Application.Features.Customers.Validation;
 using InvoiceBuilder.Database;
 using InvoiceBuilder.Database.Extensions;
+using QuestPDF.Infrastructure;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 

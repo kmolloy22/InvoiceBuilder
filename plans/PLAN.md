@@ -69,6 +69,15 @@ from line items, and export them (PDF) for delivery.
   customer/sender, line items, subtotal/tax/total). Manually smoke-tested
   (list, view detail, delete) on 2026-11-18 — passed. No edit UI yet (see
   known issues).
+- Invoice PDF export: `GET /api/invoices/{id}/pdf` (`GetInvoicePdfHandler` +
+  `InvoicePdfDocument`, built with QuestPDF under the Community license —
+  free under $1M USD annual revenue) renders invoice number, dates, sender/
+  customer, line items, and subtotal/tax/total to a single-page PDF. The Web
+  project proxies the download at `/invoices/{id}/pdf` (can't call the Api
+  directly from the browser) so `InvoiceDetail.razor`'s "Download PDF" button
+  can link straight to it. Manually verified end to end (direct API curl +
+  through the Web proxy in the browser) on 2026-11-18 — passed. No automated
+  test coverage yet (see Known issues).
 - Customers UI manually smoke-tested end to end on 2026-10-16 (create,
   validation errors, edit, delete, paging) — all passed.
 - Build: both known NuGet audit failures are fixed and merged to `master` —
@@ -94,7 +103,7 @@ from line items, and export them (PDF) for delivery.
 - [x] Senders UI (list + create/edit/delete), incl. Senders API integration tests (see `plans/senders-ui.md`)
 - [x] Invoice builder UI (select customer + sender, add line items, live totals) — create only, no edit yet
 - [x] Invoice list + detail view
-- [ ] Invoice PDF export
+- [x] Invoice PDF export
 - [x] Invoices API integration tests
 - [ ] More tests: Application handler tests
 - [ ] Authentication / authorization
@@ -104,12 +113,14 @@ from line items, and export them (PDF) for delivery.
 
 - Multi-tenancy: is a user account tied to one Sender, or many?
 - Tax handling: single `TaxRate` per invoice vs. per line item?
-- PDF generation approach: server-side library (QuestPDF) vs. HTML-to-PDF?
 - Invoice numbering: user-supplied vs. auto-generated sequence?
 
 ## Known issues / follow-ups
 
 - Customer form: the Email field is validated as required but has no `*` marker.
+- Invoice PDF export has no automated test coverage (no integration test hits
+  `GET /api/invoices/{id}/pdf`, no test on `InvoicePdfDocument`'s layout
+  logic). Worth adding when picking up "Application handler tests" below.
 - `UpdateInvoiceDto` has no `LineItems` field — editing an invoice cannot change
   its line items via the API as it stands today. The invoice builder UI only
   supports create for this reason; building an edit UI needs this DTO (and

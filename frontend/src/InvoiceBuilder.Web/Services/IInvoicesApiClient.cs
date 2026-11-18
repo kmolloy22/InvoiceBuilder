@@ -17,6 +17,9 @@ public interface IInvoicesApiClient
 	[Get("/api/invoices/{id}")]
 	Task<GetInvoiceResult> GetInvoiceByIdAsync(Guid id);
 
+	[Get("/api/invoices/{id}/pdf")]
+	Task<HttpResponseMessage> GetInvoicePdfAsync(Guid id);
+
 	[Put("/api/invoices/{id}")]
 	Task<GetInvoiceResult> UpdateInvoiceAsync(Guid id, [Body] UpdateInvoiceDto request);
 
