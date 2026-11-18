@@ -77,6 +77,7 @@ public sealed class Invoice
 	}
 
 	public void Update(
+		string invoiceNumber,
 		DateTime invoiceDate,
 		DateTime dueDate,
 		string currency,
@@ -87,6 +88,7 @@ public sealed class Invoice
 		decimal taxRate,
 		decimal totalAmount)
 	{
+		InvoiceNumber = invoiceNumber;
 		InvoiceDate = invoiceDate;
 		DueDate = dueDate;
 		Currency = currency;

@@ -47,14 +47,13 @@ from line items, and export them (PDF) for delivery.
 | Line items              | Via Invoice   | Create only, via the invoice builder |
 
 - EF migrations: `InitialCreate`, `AddInvoice`.
-- Tests: 33 API integration tests — Customers (9: POST, GET by id, PUT, DELETE;
+- Tests: 35 API integration tests — Customers (9: POST, GET by id, PUT, DELETE;
   happy paths, validation 400, 404s, and 409 on deleting a customer that has
-  invoices), Senders (10: the same plus cursor paging), and Invoices (14:
+  invoices), Senders (10: the same plus cursor paging), and Invoices (16:
   POST/GET-by-id/PUT/DELETE, validation 400s, duplicate-`InvoiceNumber` and
-  unknown-`CustomerId`/`SenderId` business-rule failures, cursor paging — see
-  `InvoicesEndpointsTests.cs`; found two real bugs in `UpdateInvoiceHandler`,
-  listed under Known issues). No Application handler tests, no frontend tests
-  (`frontend/tests` is empty).
+  unknown-`CustomerId`/`SenderId` business-rule failures on both create and
+  update, cursor paging — see `InvoicesEndpointsTests.cs`). No Application
+  handler tests, no frontend tests (`frontend/tests` is empty).
 - `DELETE /api/customers/{id}` and `DELETE /api/senders/{id}` both return 409
   when invoices reference the row (`plans/senders-ui.md`; Customers parity
   added alongside the invoice builder work).
@@ -118,20 +117,20 @@ from line items, and export them (PDF) for delivery.
 - `CreateInvoiceEndpoint` always returns `400 BadRequest` on handler failure,
   even for what are really 409 (duplicate `InvoiceNumber`) or 404 (unknown
   `CustomerId`/`SenderId`) cases — unlike Senders/Customers delete, which
-  branch on the error type. The builder UI's `HandleBadRequest` copes by
-  reading the `ResultError` body either way, but the API response code itself
-  is inconsistent with the rest of the app's conventions.
-- `UpdateInvoiceHandler` 500s if `CustomerId`/`SenderId` actually change to a
-  *different* valid customer/sender: it sets the scalar FK without clearing
-  the already-`Include`d `Customer`/`Sender` navigation, so EF's change
-  tracker throws on `SaveChangesAsync`. Found via the new Invoices
-  integration tests (`InvoicesEndpointsTests.cs`) — never hit in practice
-  since there's no invoice-edit UI yet. Needs the handler to detach/null the
-  old navigation (or reload) before calling `invoice.Update(...)`.
-- `UpdateInvoiceDto.InvoiceNumber` is silently ignored: `Invoice.Update(...)`
-  has no `invoiceNumber` parameter, so submitting a changed invoice number on
-  PUT does nothing — the stored number never changes. Also found via the new
-  Invoices integration tests.
+  branch on the error type. `UpdateInvoiceEndpoint` has the same issue the
+  other way: every handler failure maps to `404 NotFound`, including the
+  duplicate-`InvoiceNumber` conflict added below. The builder UI's
+  `HandleBadRequest` copes by reading the `ResultError` body either way, but
+  the API response codes themselves are inconsistent with the rest of the
+  app's conventions.
+- ~~`UpdateInvoiceHandler` 500s if `CustomerId`/`SenderId` change~~ — fixed:
+  the handler now reloads the `Customer`/`Sender` navigation after
+  `SaveChangesAsync` instead of relying on the stale pre-update `Include`.
+  ~~`UpdateInvoiceDto.InvoiceNumber` was silently ignored~~ — fixed:
+  `Invoice.Update(...)` now takes and applies `invoiceNumber`, and the
+  handler rejects a change to a number already used by another invoice
+  (`InvoiceAlreadyExists`, mirroring Create). Both found and fixed via the
+  Invoices integration tests (`InvoicesEndpointsTests.cs`).
 - Sender/Customer lists are ordered by a random `Guid` `Id`, not by name, so row
   order is arbitrary (stable across pages).
 - After creating a customer, the new row is inserted at the top of the loaded
