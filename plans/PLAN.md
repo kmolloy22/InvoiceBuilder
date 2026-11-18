@@ -43,7 +43,7 @@ from line items, and export them (PDF) for delivery.
 | ----------------------- | ------------- | ------------- |
 | Customers               | Full CRUD     | Full CRUD + Previous/Next paging |
 | Senders                 | Full CRUD     | Full CRUD + Previous/Next paging |
-| Invoices                | Full CRUD     | Create (builder UI); no list/detail/edit UI yet |
+| Invoices                | Full CRUD     | Create (builder UI), list + detail view; no edit UI yet |
 | Line items              | Via Invoice   | Create only, via the invoice builder |
 
 - EF migrations: `InitialCreate`, `AddInvoice`.
@@ -60,15 +60,20 @@ from line items, and export them (PDF) for delivery.
   `IInvoicesApiClient`. Manually smoke-tested end to end in the browser
   (create, add/remove line items, submit, form reset) on 2026-11-18 — passed.
   No edit support yet (see known issues).
+- Invoice list + detail UI: `/invoices` (`Components/Pages/Invoices.razor`,
+  Previous/Next paging, delete with confirm) and `/invoices/{id}`
+  (`Components/Pages/InvoiceDetail.razor`, read-only: dates, currency, notes,
+  customer/sender, line items, subtotal/tax/total). Manually smoke-tested
+  (list, view detail, delete) on 2026-11-18 — passed. No edit UI yet (see
+  known issues).
 - Customers UI manually smoke-tested end to end on 2026-10-16 (create,
   validation errors, edit, delete, paging) — all passed.
-- Build: the `System.Security.Cryptography.Xml`/`Pkcs` NuGet audit failure is
-  fixed on `master`. A *new*, unrelated NuGet audit failure now blocks
-  `InvoiceBuilder.AppHost` specifically (`Aspire.Dashboard.Sdk.win-x64`,
-  `Aspire.Hosting`, `Aspire.Hosting.AppHost`, `MessagePack` advisories) —
-  `dotnet build InvoiceBuilder.slnx` fails, but every other project (Api, Web,
-  Application, Database, Domain, tests) builds and tests clean in isolation.
-  Needs the same audit-fix treatment as the previous Cryptography.Xml issue.
+- Build: both known NuGet audit failures are fixed and merged to `master` —
+  the `System.Security.Cryptography.Xml`/`Pkcs` issue, and the later
+  Aspire/MessagePack issue in `InvoiceBuilder.AppHost`
+  (`Aspire.Dashboard.Sdk.win-x64`, `Aspire.Hosting`, `Aspire.Hosting.AppHost`,
+  `MessagePack` advisories). `dotnet build InvoiceBuilder.slnx` and
+  `dotnet test InvoiceBuilder.slnx` are both clean on `master`.
 
 ## Milestones
 
@@ -85,7 +90,7 @@ from line items, and export them (PDF) for delivery.
       Current status.
 - [x] Senders UI (list + create/edit/delete), incl. Senders API integration tests (see `plans/senders-ui.md`)
 - [x] Invoice builder UI (select customer + sender, add line items, live totals) — create only, no edit yet
-- [ ] Invoice list + detail view
+- [x] Invoice list + detail view
 - [ ] Invoice PDF export
 - [ ] More tests: Invoices API integration tests, Application handler tests
 - [ ] Authentication / authorization
