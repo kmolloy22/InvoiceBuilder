@@ -84,16 +84,19 @@ from line items, and export them (PDF) for delivery.
   invoices table (top 5 by invoice date, linking to each detail page), and
   quick-action buttons to New Invoice/Customers/Senders. Manually
   smoke-tested end to end on 2026-11-18 — passed.
-- Sidebar (`MainLayout.razor`) redesigned: brand header inside the drawer
-  (moved out of the `MudAppBar`, which now just has the menu toggle and
-  the notification/account icons), nav links grouped under "Overview" and
-  "Manage" subheadings, and the dead disabled "Settings" link and the
-  "New Invoice" shortcut removed — the latter was never uniquely
-  highlighted since `/invoices` is a prefix of `/invoices/new`, so both lit
-  up together. The truly-unused scaffold leftover
-  `Components/Layout/NavMenu.razor` (and its `.css`) was deleted as part of
-  this; it was already flagged as dead in Known issues. Manually
-  smoke-tested end to end on 2026-11-18 — passed.
+- Sidebar and header (`MainLayout.razor`) redesigned: brand header inside the
+  drawer, nav links grouped under "Overview" and "Manage" subheadings, and
+  the dead disabled "Settings" link and the "New Invoice" shortcut removed —
+  the latter was never uniquely highlighted since `/invoices` is a prefix of
+  `/invoices/new`, so both lit up together. The truly-unused scaffold
+  leftover `Components/Layout/NavMenu.razor` (and its `.css`) was deleted as
+  part of this; it was already flagged as dead in Known issues. The
+  `MudAppBar` now shows the current page's title (tracked via
+  `NavigationManager.LocationChanged`) instead of a static app name, and the
+  previously inert notification/account icons are real `MudMenu` dropdowns
+  ("No new notifications" / "Sign-in not yet available" — honest
+  placeholders, not fabricated data, consistent with auth not being built
+  yet). Manually smoke-tested end to end on 2026-11-18 — passed.
 - Customers UI manually smoke-tested end to end on 2026-10-16 (create,
   validation errors, edit, delete, paging) — all passed.
 - Build: both known NuGet audit failures are fixed and merged to `master` —

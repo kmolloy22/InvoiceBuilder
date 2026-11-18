@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager NavigationManager
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -11,9 +13,20 @@
                        Color="Color.Inherit"
                        Edge="Edge.Start"
                        OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-3">@_pageTitle</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
+        <MudMenu Icon="@Icons.Material.Filled.Notifications"
+                 Color="Color.Inherit"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight">
+            <MudMenuItem Disabled="true">No new notifications</MudMenuItem>
+        </MudMenu>
+        <MudMenu Icon="@Icons.Material.Filled.AccountCircle"
+                 Color="Color.Inherit"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight">
+            <MudMenuItem Disabled="true">Sign-in not yet available</MudMenuItem>
+        </MudMenu>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen"
@@ -59,9 +72,52 @@
 
 @code {
     private bool _drawerOpen = true;
+    private string _pageTitle = "Dashboard";
+
+    protected override void OnInitialized()
+    {
+        UpdatePageTitle(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        UpdatePageTitle(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdatePageTitle(string uri)
+    {
+        var path = new Uri(uri).AbsolutePath.TrimEnd('/');
+
+        _pageTitle = path switch
+        {
+            "" => "Dashboard",
+            "/customers" => "Customers",
+            "/senders" => "Senders",
+            "/invoices" => "Invoices",
+            "/invoices/new" => "New Invoice",
+            _ when path.StartsWith("/invoices/", StringComparison.Ordinal) => "Invoice Details",
+            _ => "Invoice Builder",
+        };
+    }
 
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            NavigationManager.LocationChanged -= OnLocationChanged;
+        }
     }
 }
