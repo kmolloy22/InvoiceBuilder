@@ -24,6 +24,7 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="backend/tests/InvoiceBuilder.Api.IntegrationTests/InvoiceBuilder.Api.IntegrationTests.csproj" />
+    <Project Path="backend/tests/InvoiceBuilder.Application.Tests/InvoiceBuilder.Application.Tests.csproj" />
   </Folder>
   <Folder Name="/Web/">
     <Project Path="frontend/src/InvoiceBuilder.Web/InvoiceBuilder.Web.csproj" />

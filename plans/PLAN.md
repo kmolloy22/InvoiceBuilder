@@ -34,6 +34,10 @@ from line items, and export them (PDF) for delivery.
 - **Tests** (`backend/tests`):
   - `InvoiceBuilder.Api.IntegrationTests` — xUnit + `WebApplicationFactory`
     against a Testcontainers PostgreSQL (requires Docker).
+  - `InvoiceBuilder.Application.Tests` — xUnit unit tests calling MediatR
+    handlers directly against an EF Core InMemory `InvoiceBuilderContext`
+    (no Docker, no HTTP). `InternalsVisibleTo` on `InvoiceBuilder.Application`
+    exposes the (deliberately `internal`) handler classes to this project.
 - **CI** (`.github/workflows/ci.yml`): restore, build and test the root
   `InvoiceBuilder.slnx` on push/PR to `master`. Frontend job is commented out.
 
@@ -47,13 +51,13 @@ from line items, and export them (PDF) for delivery.
 | Line items              | Via Invoice   | Create only, via the invoice builder |
 
 - EF migrations: `InitialCreate`, `AddInvoice`.
-- Tests: 35 API integration tests — Customers (9: POST, GET by id, PUT, DELETE;
-  happy paths, validation 400, 404s, and 409 on deleting a customer that has
-  invoices), Senders (10: the same plus cursor paging), and Invoices (16:
-  POST/GET-by-id/PUT/DELETE, validation 400s, duplicate-`InvoiceNumber` and
-  unknown-`CustomerId`/`SenderId` business-rule failures on both create and
-  update, cursor paging — see `InvoicesEndpointsTests.cs`). No Application
-  handler tests, no frontend tests (`frontend/tests` is empty).
+- Tests: 35 API integration tests (Customers 9, Senders 10, Invoices 16 — see
+  `InvoiceBuilder.Api.IntegrationTests`) plus 34 Application handler unit
+  tests (Customers 9, Senders 9, Invoices 16, covering every handler's
+  success path and failure branches — not-found, conflict, pagination
+  clamping/paging, and the Invoice PDF handler — against an EF Core InMemory
+  context; see `InvoiceBuilder.Application.Tests`). No frontend tests
+  (`frontend/tests` is empty).
 - `DELETE /api/customers/{id}` and `DELETE /api/senders/{id}` both return 409
   when invoices reference the row (`plans/senders-ui.md`; Customers parity
   added alongside the invoice builder work).
@@ -124,7 +128,7 @@ from line items, and export them (PDF) for delivery.
 - [x] Invoice list + detail view
 - [x] Invoice PDF export
 - [x] Invoices API integration tests
-- [ ] More tests: Application handler tests
+- [x] More tests: Application handler tests
 - [ ] Authentication / authorization
 - [ ] Deployment pipeline
 
@@ -137,9 +141,11 @@ from line items, and export them (PDF) for delivery.
 ## Known issues / follow-ups
 
 - Customer form: the Email field is validated as required but has no `*` marker.
-- Invoice PDF export has no automated test coverage (no integration test hits
-  `GET /api/invoices/{id}/pdf`, no test on `InvoicePdfDocument`'s layout
-  logic). Worth adding when picking up "Application handler tests" below.
+- Invoice PDF export has `GetInvoicePdfHandler` unit test coverage now
+  (returns `%PDF`-prefixed bytes named `{InvoiceNumber}.pdf`, 404s on an
+  unknown id), but still no integration test hitting
+  `GET /api/invoices/{id}/pdf` directly, and nothing asserts on
+  `InvoicePdfDocument`'s actual rendered layout beyond "it's a PDF".
 - `UpdateInvoiceDto` has no `LineItems` field — editing an invoice cannot change
   its line items via the API as it stands today. The invoice builder UI only
   supports create for this reason; building an edit UI needs this DTO (and
