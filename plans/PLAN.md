@@ -78,6 +78,12 @@ from line items, and export them (PDF) for delivery.
   can link straight to it. Manually verified end to end (direct API curl +
   through the Web proxy in the browser) on 2026-11-18 — passed. No automated
   test coverage yet (see Known issues).
+- Dashboard at `/` (`Components/Pages/Home.razor`) replaced the static
+  marketing-style welcome page with real data: Customers/Senders/Invoices
+  counts (paged through client-side — no count endpoint exists), a Recent
+  invoices table (top 5 by invoice date, linking to each detail page), and
+  quick-action buttons to New Invoice/Customers/Senders. Manually
+  smoke-tested end to end on 2026-11-18 — passed.
 - Customers UI manually smoke-tested end to end on 2026-10-16 (create,
   validation errors, edit, delete, paging) — all passed.
 - Build: both known NuGet audit failures are fixed and merged to `master` —

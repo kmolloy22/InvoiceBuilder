@@ -1,57 +1,229 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+@using InvoiceBuilder.Application.Features.Customers.Models.Get
+@using InvoiceBuilder.Application.Features.Invoices.Models.Get
+@using InvoiceBuilder.Application.Features.Senders.Models.Get
+@using InvoiceBuilder.Application.Shared.Responses.Invoices
+@using InvoiceBuilder.Web.Services
+@using MudBlazor
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
-    <MudPaper Class="pa-8" Elevation="3">
-        <MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true">
-            Welcome to Invoice Builder Platform
-        </MudText>
-        <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-4">
-            Modern Customer & Invoice Management System
-        </MudText>
+@inject ICustomersApiClient CustomersApiClient
+@inject ISendersApiClient SendersApiClient
+@inject IInvoicesApiClient InvoicesApiClient
 
-        <MudDivider Class="my-4" />
+<PageTitle>Dashboard</PageTitle>
 
-        <MudGrid Spacing="3" Class="mt-4">
-            <MudItem xs="12" md="6">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-                        <MudText Typo="Typo.h6">Customer Management</MudText>
-                        <MudText Typo="Typo.body2" Class="mt-2">
-                            Create, view, and manage customer accounts with details and address information.
-                        </MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/customers">
-                            View Customers
-                        </MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
 
-            <MudItem xs="12" md="6">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Secondary" Class="mb-2" />
-                        <MudText Typo="Typo.h6">Invoice Processing</MudText>
-                        <MudText Typo="Typo.body2" Class="mt-2">
-                            Track and manage customer invoices. (Coming Soon)
-                        </MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Secondary" Disabled="true">
-                            Coming Soon
-                        </MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-        </MudGrid>
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
 
-        <MudAlert Severity="Severity.Info" Class="mt-6">
-            <strong>Getting Started:</strong> Navigate to Accounts to begin managing your customer data.
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @_error
         </MudAlert>
-    </MudPaper>
+    }
+
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Customers</MudText>
+                        <MudText Typo="Typo.h4">@_customerCount</MudText>
+                    </MudStack>
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Primary" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Senders</MudText>
+                        <MudText Typo="Typo.h4">@_senderCount</MudText>
+                    </MudStack>
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Invoices</MudText>
+                        <MudText Typo="Typo.h4">@_invoiceCount</MudText>
+                    </MudStack>
+                    <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Large" Color="Color.Primary" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+                    <MudText Typo="Typo.h6">Recent invoices</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/invoices">
+                        View all
+                    </MudButton>
+                </MudStack>
+
+                <MudTable T="InvoiceListItem" Items="_recentInvoices" Hover="true" Dense="true" Loading="_loading">
+                    <HeaderContent>
+                        <MudTh>Invoice #</MudTh>
+                        <MudTh>Invoice Date</MudTh>
+                        <MudTh>Due Date</MudTh>
+                        <MudTh Style="text-align:right">Total</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Invoice #">
+                            <MudLink Href="@($"/invoices/{context.Id}")">@context.InvoiceNumber</MudLink>
+                        </MudTd>
+                        <MudTd DataLabel="Invoice Date">@context.InvoiceDate.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="Due Date">@context.DueDate.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="Total" Style="text-align:right">@context.TotalAmount.ToString("N2")</MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        @if (!_loading)
+                        {
+                            <MudText>No invoices yet.</MudText>
+                        }
+                    </NoRecordsContent>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">Quick actions</MudText>
+                <MudStack Spacing="2">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               Href="/invoices/new"
+                               FullWidth="true">
+                        New invoice
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.People"
+                               Href="/customers"
+                               FullWidth="true">
+                        Manage customers
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Inventory"
+                               Href="/senders"
+                               FullWidth="true">
+                        Manage senders
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 </MudContainer>
+
+@code {
+
+    private const int PageSize = 5;
+
+    private int _customerCount;
+    private int _senderCount;
+    private int _invoiceCount;
+    private List<InvoiceListItem> _recentInvoices = new();
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+
+            var customerCountTask = CountCustomersAsync();
+            var senderCountTask = CountSendersAsync();
+            var invoicesTask = CountAndLoadRecentInvoicesAsync();
+
+            await Task.WhenAll(customerCountTask, senderCountTask, invoicesTask);
+
+            _customerCount = await customerCountTask;
+            _senderCount = await senderCountTask;
+            _invoiceCount = await invoicesTask;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load dashboard data: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task<int> CountCustomersAsync()
+    {
+        var count = 0;
+        Guid? cursor = null;
+        while (true)
+        {
+            var page = await CustomersApiClient.GetCustomersAsync(new GetCustomersDto(cursor, true, PageSize));
+            count += page.Items.Count;
+            if (!page.NextCursor.HasValue)
+            {
+                return count;
+            }
+            cursor = page.NextCursor;
+        }
+    }
+
+    private async Task<int> CountSendersAsync()
+    {
+        var count = 0;
+        Guid? cursor = null;
+        while (true)
+        {
+            var page = await SendersApiClient.GetSendersAsync(new GetSendersDto(cursor, true, PageSize));
+            count += page.Items.Count;
+            if (!page.NextCursor.HasValue)
+            {
+                return count;
+            }
+            cursor = page.NextCursor;
+        }
+    }
+
+    private async Task<int> CountAndLoadRecentInvoicesAsync()
+    {
+        var count = 0;
+        Guid? cursor = null;
+        var allInvoices = new List<InvoiceListItem>();
+        while (true)
+        {
+            var page = await InvoicesApiClient.GetInvoicesAsync(new GetInvoicesDto(cursor, true, PageSize));
+            allInvoices.AddRange(page.Items);
+            count += page.Items.Count;
+            if (!page.NextCursor.HasValue)
+            {
+                break;
+            }
+            cursor = page.NextCursor;
+        }
+
+        _recentInvoices = allInvoices
+            .OrderByDescending(i => i.InvoiceDate)
+            .Take(5)
+            .ToList();
+
+        return count;
+    }
+
+}
