@@ -48,6 +48,22 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
+app.MapGet("/invoices/{id:guid}/pdf", async (Guid id, IInvoicesApiClient client) =>
+{
+	var response = await client.GetInvoicePdfAsync(id);
+	if (!response.IsSuccessStatusCode)
+	{
+		return Results.NotFound();
+	}
+
+	var bytes = await response.Content.ReadAsByteArrayAsync();
+	var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+		?? response.Content.Headers.ContentDisposition?.FileName
+		?? $"invoice-{id:N}.pdf";
+
+	return Results.File(bytes, "application/pdf", fileName);
+});
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

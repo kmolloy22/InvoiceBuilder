@@ -13,11 +13,23 @@
 <PageTitle>Invoice @_invoice?.InvoiceNumber</PageTitle>
 
 <MudContainer>
-    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Spacing="2">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" aria-label="Back to invoices" />
-        <MudText Typo="Typo.h4">
-            Invoice @_invoice?.InvoiceNumber
-        </MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" aria-label="Back to invoices" />
+            <MudText Typo="Typo.h4">
+                Invoice @_invoice?.InvoiceNumber
+            </MudText>
+        </MudStack>
+        @if (_invoice is not null)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                       Href="@($"/invoices/{Id}/pdf")"
+                       Target="_blank">
+                Download PDF
+            </MudButton>
+        }
     </MudStack>
 
     @if (_loading)

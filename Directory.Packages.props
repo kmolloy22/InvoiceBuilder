@@ -12,6 +12,7 @@
     <PackageVersion Include="MudBlazor" Version="9.9.0" />
     <PackageVersion Include="Refit" Version="15.2.0" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="15.2.0" />
+    <PackageVersion Include="QuestPDF" Version="2024.12.3" />
     <!-- Database -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.14" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14" />

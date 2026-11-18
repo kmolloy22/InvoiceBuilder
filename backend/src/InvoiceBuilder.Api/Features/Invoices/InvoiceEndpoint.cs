@@ -1,6 +1,7 @@
 ﻿using InvoiceBuilder.Api.Features.Invoices.InvoiceCreate;
 using InvoiceBuilder.Api.Features.Invoices.InvoiceDelete;
 using InvoiceBuilder.Api.Features.Invoices.InvoiceGetById;
+using InvoiceBuilder.Api.Features.Invoices.InvoicePdf;
 using InvoiceBuilder.Api.Features.Invoices.InvoicesGet;
 using InvoiceBuilder.Api.Features.Invoices.InvoiceUpdate;
 
@@ -15,6 +16,7 @@ public static class InvoiceEndpoint
 		group.MapCreateInvoiceEndpoint();
 		group.MapGetInvoicesEndpoint();
 		group.MapGetByIdInvoiceEndpoint();
+		group.MapGetInvoicePdfEndpoint();
 		group.MapUpdateInvoiceEndpoint();
 		group.MapDeleteInvoiceEndpoint();
 	}
