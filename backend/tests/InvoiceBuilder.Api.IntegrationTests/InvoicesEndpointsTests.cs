@@ -245,6 +245,8 @@ public sealed class InvoicesEndpointsTests : IClassFixture<CustomerApiFactory>
 	{
 		var request = await NewValidInvoiceAsync();
 		var created = await CreateAsync(request);
+		var newCustomerId = await CreateCustomerAsync();
+		var newSenderId = await CreateSenderAsync();
 
 		var update = new UpdateInvoiceDto(
 			InvoiceNumber: $"INV-UPDATED-{Guid.NewGuid():N}",
@@ -252,8 +254,8 @@ public sealed class InvoicesEndpointsTests : IClassFixture<CustomerApiFactory>
 			DueDate: DateTime.UtcNow.Date.AddDays(14),
 			Currency: "EUR",
 			Notes: "Updated notes",
-			CustomerId: request.CustomerId,
-			SenderId: request.SenderId,
+			CustomerId: newCustomerId,
+			SenderId: newSenderId,
 			Subtotal: 2000m,
 			TaxRate: 0.2m,
 			TotalAmount: 2400m);
@@ -264,20 +266,20 @@ public sealed class InvoicesEndpointsTests : IClassFixture<CustomerApiFactory>
 
 		var body = await putResponse.Content.ReadFromJsonAsync<GetInvoiceResult>();
 		Assert.NotNull(body);
-		// UpdateInvoiceHandler never applies Dto.InvoiceNumber to the entity (Invoice.Update has no
-		// invoiceNumber parameter), so the original invoice number is preserved, not the one submitted.
-		Assert.Equal(request.InvoiceNumber, body!.InvoiceNumber);
+		Assert.Equal(update.InvoiceNumber, body!.InvoiceNumber);
 		Assert.Equal(update.Currency, body.Currency);
 		Assert.Equal(update.Notes, body.Notes);
-		Assert.Equal(request.CustomerId, body.Customer.Id);
-		Assert.Equal(request.SenderId, body.Sender.Id);
+		Assert.Equal(newCustomerId, body.Customer.Id);
+		Assert.Equal(newSenderId, body.Sender.Id);
 		Assert.Equal(update.Subtotal, body.Subtotal);
 		Assert.Equal(update.TaxRate, body.TaxRate);
 		Assert.Equal(update.TotalAmount, body.TotalAmount);
 
 		var reloaded = await _client.GetFromJsonAsync<GetInvoiceResult>($"/api/invoices/{created.Id}");
 		Assert.NotNull(reloaded);
-		Assert.Equal(update.Currency, reloaded!.Currency);
+		Assert.Equal(update.InvoiceNumber, reloaded!.InvoiceNumber);
+		Assert.Equal(newCustomerId, reloaded.Customer.Id);
+		Assert.Equal(newSenderId, reloaded.Sender.Id);
 	}
 
 	[Fact]
@@ -299,6 +301,62 @@ public sealed class InvoicesEndpointsTests : IClassFixture<CustomerApiFactory>
 		var response = await _client.PutAsJsonAsync($"/api/invoices/{Guid.NewGuid()}", update);
 
 		Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+	}
+
+	[Fact]
+	public async Task Put_duplicate_invoice_number_returns_404_with_conflict_error()
+	{
+		var existingNumber = $"INV-TEST-{Guid.NewGuid():N}";
+		await CreateAsync(await NewValidInvoiceAsync(existingNumber));
+
+		var request = await NewValidInvoiceAsync();
+		var created = await CreateAsync(request);
+
+		var update = new UpdateInvoiceDto(
+			InvoiceNumber: existingNumber,
+			InvoiceDate: request.InvoiceDate,
+			DueDate: request.DueDate,
+			Currency: request.Currency,
+			Notes: request.Notes,
+			CustomerId: request.CustomerId,
+			SenderId: request.SenderId,
+			Subtotal: request.Subtotal,
+			TaxRate: request.TaxRate,
+			TotalAmount: request.TotalAmount);
+
+		var response = await _client.PutAsJsonAsync($"/api/invoices/{created.Id}", update);
+
+		// UpdateInvoiceEndpoint maps every handler failure to 404, including this Conflict
+		// case - same status-code-vs-ResultErrorType mismatch already noted for Create.
+		Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+		var error = await response.Content.ReadFromJsonAsync<ResultError>();
+		Assert.NotNull(error);
+		Assert.Equal("InvoiceAlreadyExists", error!.Code);
+		Assert.Equal(ResultErrorType.Conflict, error.Type);
+	}
+
+	[Fact]
+	public async Task Put_same_invoice_number_is_allowed()
+	{
+		var request = await NewValidInvoiceAsync();
+		var created = await CreateAsync(request);
+
+		var update = new UpdateInvoiceDto(
+			InvoiceNumber: request.InvoiceNumber,
+			InvoiceDate: request.InvoiceDate,
+			DueDate: request.DueDate,
+			Currency: "EUR",
+			Notes: request.Notes,
+			CustomerId: request.CustomerId,
+			SenderId: request.SenderId,
+			Subtotal: request.Subtotal,
+			TaxRate: request.TaxRate,
+			TotalAmount: request.TotalAmount);
+
+		var response = await _client.PutAsJsonAsync($"/api/invoices/{created.Id}", update);
+
+		Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 	}
 
 	[Fact]

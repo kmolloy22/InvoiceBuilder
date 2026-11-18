@@ -47,7 +47,19 @@ public class UpdateInvoiceHandler : IRequestHandler<UpdateInvoiceCommand, Result
 				new ResultError("SenderNotFound", $"Sender with ID {cmd.Dto.SenderId} was not found.", ResultErrorType.NotFound));
 		}
 
+		if (cmd.Dto.InvoiceNumber != invoice.InvoiceNumber)
+		{
+			var invoiceNumberTaken = await _dbContext.Invoices.AnyAsync(
+				x => x.InvoiceNumber == cmd.Dto.InvoiceNumber && x.Id != invoice.Id, cancellationToken);
+			if (invoiceNumberTaken)
+			{
+				return Result<GetInvoiceResult>.Failure(
+					new ResultError("InvoiceAlreadyExists", $"Invoice with number {cmd.Dto.InvoiceNumber} already exists.", ResultErrorType.Conflict));
+			}
+		}
+
 		invoice.Update(
+			cmd.Dto.InvoiceNumber,
 			cmd.Dto.InvoiceDate,
 			cmd.Dto.DueDate,
 			cmd.Dto.Currency,
@@ -59,6 +71,12 @@ public class UpdateInvoiceHandler : IRequestHandler<UpdateInvoiceCommand, Result
 			cmd.Dto.TotalAmount);
 
 		await _dbContext.SaveChangesAsync(cancellationToken);
+
+		// Customer/Sender may have changed; the navigation properties loaded via the
+		// initial Include() still point at the previous related entities (or are nulled
+		// by EF's FK-mismatch fixup), so reload them before mapping the response.
+		await _dbContext.Entry(invoice).Reference(x => x.Customer).LoadAsync(cancellationToken);
+		await _dbContext.Entry(invoice).Reference(x => x.Sender).LoadAsync(cancellationToken);
 
 		var result = invoice.MapToResponse();
 
