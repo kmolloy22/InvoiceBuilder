@@ -11,7 +11,6 @@
                        Color="Color.Inherit"
                        Edge="Edge.Start"
                        OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h5" Class="ml-3">Invoice Builder</MudText>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
         <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
@@ -20,12 +19,19 @@
     <MudDrawer @bind-Open="_drawerOpen"
                ClipMode="DrawerClipMode.Always"
                Elevation="2">
+        <MudDrawerHeader Class="d-flex align-center gap-3 px-4">
+            <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Color="Color.Primary" Size="Size.Medium" />
+            <MudText Typo="Typo.h6">Invoice Builder</MudText>
+        </MudDrawerHeader>
         <MudNavMenu>
+            <MudText Typo="Typo.overline" Class="mud-text-secondary px-4">Overview</MudText>
             <MudNavLink Href="/"
                         Match="NavLinkMatch.All"
                         Icon="@Icons.Material.Filled.Dashboard">
                 Dashboard
             </MudNavLink>
+
+            <MudText Typo="Typo.overline" Class="mud-text-secondary px-4 mt-4">Manage</MudText>
             <MudNavLink Href="/customers"
                         Match="NavLinkMatch.Prefix"
                         Icon="@Icons.Material.Filled.People">
@@ -40,17 +46,6 @@
                         Match="NavLinkMatch.Prefix"
                         Icon="@Icons.Material.Filled.ReceiptLong">
                 Invoices
-            </MudNavLink>
-            <MudNavLink Href="/invoices/new"
-                        Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.ShoppingCart">
-                New Invoice
-            </MudNavLink>
-            <MudDivider Class="my-2" />
-            <MudNavLink Href="/settings"
-                        Icon="@Icons.Material.Filled.Settings"
-                        Disabled="true">
-                Settings
             </MudNavLink>
         </MudNavMenu>
     </MudDrawer>

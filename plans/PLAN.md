@@ -84,6 +84,16 @@ from line items, and export them (PDF) for delivery.
   invoices table (top 5 by invoice date, linking to each detail page), and
   quick-action buttons to New Invoice/Customers/Senders. Manually
   smoke-tested end to end on 2026-11-18 — passed.
+- Sidebar (`MainLayout.razor`) redesigned: brand header inside the drawer
+  (moved out of the `MudAppBar`, which now just has the menu toggle and
+  the notification/account icons), nav links grouped under "Overview" and
+  "Manage" subheadings, and the dead disabled "Settings" link and the
+  "New Invoice" shortcut removed — the latter was never uniquely
+  highlighted since `/invoices` is a prefix of `/invoices/new`, so both lit
+  up together. The truly-unused scaffold leftover
+  `Components/Layout/NavMenu.razor` (and its `.css`) was deleted as part of
+  this; it was already flagged as dead in Known issues. Manually
+  smoke-tested end to end on 2026-11-18 — passed.
 - Customers UI manually smoke-tested end to end on 2026-10-16 (create,
   validation errors, edit, delete, paging) — all passed.
 - Build: both known NuGet audit failures are fixed and merged to `master` —
@@ -155,8 +165,6 @@ from line items, and export them (PDF) for delivery.
   user navigates (consequence of the in-place list update).
 - `NU1903` for `SSH.NET` 2024.2.0 via `Testcontainers` 4.6.0 — test project only,
   non-fatal; resolve with a newer Testcontainers or a direct `SSH.NET` pin.
-- `Components/Layout/NavMenu.razor` is stale Bootstrap markup and unused; the
-  live navigation is `MudNavMenu` in `MainLayout.razor`.
 - Server-side error paths in the Customers UI (400 mapping, 404 on edit/delete,
   network failure) are implemented but not manually verified.
 - The `.claude/` folder (including the `create-feature` skill) and `CLAUDE.md`
