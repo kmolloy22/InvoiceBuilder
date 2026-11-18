@@ -19,4 +19,8 @@
     <ProjectReference Include="..\InvoiceBuilder.Domain\InvoiceBuilder.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="InvoiceBuilder.Application.Tests" />
+  </ItemGroup>
+
 </Project>
