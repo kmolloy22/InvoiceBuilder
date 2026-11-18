@@ -47,10 +47,14 @@ from line items, and export them (PDF) for delivery.
 | Line items              | Via Invoice   | Create only, via the invoice builder |
 
 - EF migrations: `InitialCreate`, `AddInvoice`.
-- Tests: 19 API integration tests — Customers (9: POST, GET by id, PUT, DELETE;
+- Tests: 33 API integration tests — Customers (9: POST, GET by id, PUT, DELETE;
   happy paths, validation 400, 404s, and 409 on deleting a customer that has
-  invoices) and Senders (10: the same plus cursor paging). No Invoices tests,
-  no Application handler tests, no frontend tests (`frontend/tests` is empty).
+  invoices), Senders (10: the same plus cursor paging), and Invoices (14:
+  POST/GET-by-id/PUT/DELETE, validation 400s, duplicate-`InvoiceNumber` and
+  unknown-`CustomerId`/`SenderId` business-rule failures, cursor paging — see
+  `InvoicesEndpointsTests.cs`; found two real bugs in `UpdateInvoiceHandler`,
+  listed under Known issues). No Application handler tests, no frontend tests
+  (`frontend/tests` is empty).
 - `DELETE /api/customers/{id}` and `DELETE /api/senders/{id}` both return 409
   when invoices reference the row (`plans/senders-ui.md`; Customers parity
   added alongside the invoice builder work).
@@ -92,7 +96,8 @@ from line items, and export them (PDF) for delivery.
 - [x] Invoice builder UI (select customer + sender, add line items, live totals) — create only, no edit yet
 - [x] Invoice list + detail view
 - [ ] Invoice PDF export
-- [ ] More tests: Invoices API integration tests, Application handler tests
+- [x] Invoices API integration tests
+- [ ] More tests: Application handler tests
 - [ ] Authentication / authorization
 - [ ] Deployment pipeline
 
@@ -116,6 +121,17 @@ from line items, and export them (PDF) for delivery.
   branch on the error type. The builder UI's `HandleBadRequest` copes by
   reading the `ResultError` body either way, but the API response code itself
   is inconsistent with the rest of the app's conventions.
+- `UpdateInvoiceHandler` 500s if `CustomerId`/`SenderId` actually change to a
+  *different* valid customer/sender: it sets the scalar FK without clearing
+  the already-`Include`d `Customer`/`Sender` navigation, so EF's change
+  tracker throws on `SaveChangesAsync`. Found via the new Invoices
+  integration tests (`InvoicesEndpointsTests.cs`) — never hit in practice
+  since there's no invoice-edit UI yet. Needs the handler to detach/null the
+  old navigation (or reload) before calling `invoice.Update(...)`.
+- `UpdateInvoiceDto.InvoiceNumber` is silently ignored: `Invoice.Update(...)`
+  has no `invoiceNumber` parameter, so submitting a changed invoice number on
+  PUT does nothing — the stored number never changes. Also found via the new
+  Invoices integration tests.
 - Sender/Customer lists are ordered by a random `Guid` `Id`, not by name, so row
   order is arbitrary (stable across pages).
 - After creating a customer, the new row is inserted at the top of the loaded
