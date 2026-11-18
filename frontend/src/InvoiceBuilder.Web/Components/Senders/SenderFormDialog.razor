@@ -1,0 +1,283 @@
+@using System.Net
+@using System.Text.Json
+@using InvoiceBuilder.Application.Features.Senders.Models.Create
+@using InvoiceBuilder.Application.Features.Senders.Models.Update
+@using InvoiceBuilder.Application.Shared.Responses.Senders
+@using InvoiceBuilder.Web.Services
+@using Refit
+
+@inject ISendersApiClient SendersApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <div class="d-flex justify-center pa-8">
+                <MudProgressCircular Indeterminate="true" />
+            </div>
+        }
+        else
+        {
+            <MudForm @ref="_form" Model="_model">
+                <MudGrid>
+                    <!-- Sender Details -->
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h6" Class="mb-2">Sender Details</MudText>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_model.SenderCompanyName"
+                                      Label="Company Name"
+                                      Required="true"
+                                      RequiredError="Company name is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.SenderCompanyName))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.SenderCompanyName))" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_model.SenderFullName"
+                                      Label="Full Name"
+                                      Required="true"
+                                      RequiredError="Full name is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.SenderFullName))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.SenderFullName))" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_model.SenderTaxVatId"
+                                      Label="Tax / VAT ID"
+                                      Required="true"
+                                      RequiredError="Tax / VAT ID is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.SenderTaxVatId))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.SenderTaxVatId))" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_model.SenderAddress"
+                                      Label="Address"
+                                      Lines="2"
+                                      Required="true"
+                                      RequiredError="Address is required"
+                                      Variant="Variant.Outlined"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.SenderAddress))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.SenderAddress))" />
+                    </MudItem>
+
+                    <!-- Payment -->
+                    <MudItem xs="12">
+                        <MudDivider Class="my-2" />
+                        <MudText Typo="Typo.h6" Class="mb-2">Payment</MudText>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_model.BankDetails"
+                                      Label="Bank Details"
+                                      Lines="3"
+                                      Required="true"
+                                      RequiredError="Bank details are required"
+                                      Variant="Variant.Outlined"
+                                      HelperText="Shown on invoices, e.g. bank name, IBAN, SWIFT"
+                                      Error="_serverErrors.ContainsKey(nameof(_model.BankDetails))"
+                                      ErrorText="@_serverErrors.GetValueOrDefault(nameof(_model.BankDetails))" />
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-4">@_errorMessage</MudAlert>
+            }
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="_loading || _saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Saving</MudText>
+            }
+            else
+            {
+                <MudText>Save</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Null = create mode; non-null = edit the sender with this id.</summary>
+    [Parameter]
+    public Guid? SenderId { get; set; }
+
+    private readonly SenderFormModel _model = new();
+    private readonly Dictionary<string, string> _serverErrors = new();
+    private MudForm _form = default!;
+    private bool _loading;
+    private bool _saving;
+    private string? _errorMessage;
+
+    private bool IsEdit => SenderId.HasValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsEdit)
+        {
+            return;
+        }
+
+        try
+        {
+            _loading = true;
+            var sender = await SendersApiClient.GetSenderByIdAsync(SenderId!.Value);
+            _model.SenderCompanyName = sender.SenderCompanyName;
+            _model.SenderFullName = sender.SenderFullName;
+            _model.SenderAddress = sender.SenderAddress;
+            _model.SenderTaxVatId = sender.SenderTaxVatId;
+            _model.BankDetails = sender.BankDetails;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Could not load sender: {ex.Message}", Severity.Error);
+            MudDialog.Cancel();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task Submit()
+    {
+        _serverErrors.Clear();
+        _errorMessage = null;
+        await _form.ValidateAsync();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        try
+        {
+            _saving = true;
+            SenderListItem row;
+
+            if (IsEdit)
+            {
+                var updated = await SendersApiClient.UpdateSenderAsync(
+                    SenderId!.Value,
+                    new UpdateSenderDto(
+                        _model.SenderCompanyName,
+                        _model.SenderFullName,
+                        _model.SenderAddress,
+                        _model.SenderTaxVatId,
+                        _model.BankDetails));
+
+                row = new SenderListItem(
+                    updated.Id,
+                    updated.SenderCompanyName,
+                    updated.SenderFullName,
+                    updated.SenderTaxVatId);
+            }
+            else
+            {
+                var created = await SendersApiClient.CreateSenderAsync(
+                    new CreateSenderDto(
+                        _model.SenderCompanyName,
+                        _model.SenderFullName,
+                        _model.SenderAddress,
+                        _model.SenderTaxVatId,
+                        _model.BankDetails));
+
+                row = new SenderListItem(
+                    Guid.Parse(created.Id),
+                    _model.SenderCompanyName,
+                    _model.SenderFullName,
+                    _model.SenderTaxVatId);
+            }
+
+            Snackbar.Add("Sender saved", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(row));
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            MapValidationErrors(ex.Content);
+            Snackbar.Add("Please fix the highlighted fields", Severity.Error);
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Save failed ({(int)ex.StatusCode} {ex.ReasonPhrase})", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
+            _errorMessage = $"Save failed: {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    /// <summary>
+    /// Parses an RFC 7807 ValidationProblemDetails body (as produced by
+    /// <c>Results.ValidationProblem</c>) and maps its <c>errors</c> dictionary onto
+    /// the matching form fields. Keys come back PascalCased to match the DTO/model
+    /// property names.
+    /// </summary>
+    private void MapValidationErrors(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(content);
+            if (!doc.RootElement.TryGetProperty("errors", out var errors)
+                || errors.ValueKind != JsonValueKind.Object)
+            {
+                return;
+            }
+
+            foreach (var field in errors.EnumerateObject())
+            {
+                var message = field.Value.ValueKind == JsonValueKind.Array
+                    ? string.Join(" ", field.Value.EnumerateArray().Select(e => e.GetString()))
+                    : field.Value.GetString();
+
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    _serverErrors[field.Name] = message!;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Non-JSON / unexpected body – the generic snackbar already covers it.
+        }
+    }
+
+    private sealed class SenderFormModel
+    {
+        public string SenderCompanyName { get; set; } = string.Empty;
+        public string SenderFullName { get; set; } = string.Empty;
+        public string SenderAddress { get; set; } = string.Empty;
+        public string SenderTaxVatId { get; set; } = string.Empty;
+        public string BankDetails { get; set; } = string.Empty;
+    }
+}

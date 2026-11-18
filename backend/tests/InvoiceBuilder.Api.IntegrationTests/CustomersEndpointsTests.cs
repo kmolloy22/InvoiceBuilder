@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using InvoiceBuilder.Application.Features.Customers.Models.Create;
+using InvoiceBuilder.Application.Features.Customers.Models.Get;
 using InvoiceBuilder.Application.Features.Customers.Models.Update;
 using InvoiceBuilder.Application.Shared.Responses.Customers;
+using InvoiceBuilder.Domain.Results;
 using Microsoft.AspNetCore.Http;
 using Xunit;
 
@@ -32,6 +34,33 @@ public sealed class CustomersEndpointsTests : IClassFixture<CustomerApiFactory>
         var body = await response.Content.ReadFromJsonAsync<CreateCustomerResponseDto>();
         Assert.NotNull(body);
         return body!;
+    }
+
+    private async Task<Guid> FindCustomerIdByCompanyAsync(string companyName)
+    {
+        Guid? cursor = null;
+        bool? isNextPage = null;
+        while (true)
+        {
+            var url = "/api/customers?pageSize=5";
+            if (cursor.HasValue)
+            {
+                url += $"&cursor={cursor.Value}&isNextPage={isNextPage ?? true}";
+            }
+
+            var page = await _client.GetFromJsonAsync<GetCustomersResult>(url);
+            Assert.NotNull(page);
+
+            var match = page!.Items.FirstOrDefault(c => c.CompanyName == companyName);
+            if (match is not null)
+            {
+                return match.Id;
+            }
+
+            Assert.True(page.NextCursor.HasValue, $"Customer '{companyName}' was not found in any page.");
+            cursor = page.NextCursor;
+            isNextPage = true;
+        }
     }
 
     [Fact]
@@ -150,5 +179,24 @@ public sealed class CustomersEndpointsTests : IClassFixture<CustomerApiFactory>
         var response = await _client.DeleteAsync($"/api/customers/{Guid.NewGuid()}");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_customer_with_invoices_returns_409_and_keeps_customer()
+    {
+        // Seeded customer; the data seed attaches an invoice to it (Invoice -> Customer is Restrict).
+        var seededId = await FindCustomerIdByCompanyAsync("Acme Corporation");
+
+        var response = await _client.DeleteAsync($"/api/customers/{seededId}");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var error = await response.Content.ReadFromJsonAsync<ResultError>();
+        Assert.NotNull(error);
+        Assert.Equal("CustomerInUse", error!.Code);
+        Assert.Equal(ResultErrorType.Conflict, error.Type);
+
+        var stillThere = await _client.GetAsync($"/api/customers/{seededId}");
+        Assert.Equal(HttpStatusCode.OK, stillThere.StatusCode);
     }
 }

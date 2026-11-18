@@ -1,0 +1,18 @@
+namespace InvoiceBuilder.Application.Features.{{Feature}}.Models.{{Op}};
+
+public sealed record {{Op}}{{Entity}}ResponseDto(
+	/// <summary>
+	/// The unique identifier of the created {{EntityLower}}
+	/// </summary>
+	string Id,
+
+	/// <summary>
+	/// The URI location of the created {{EntityLower}} resource
+	/// </summary>
+	string Location,
+
+	/// <summary>
+	/// Timestamp when the {{EntityLower}} was created (UTC)
+	/// </summary>
+	DateTimeOffset CreatedAt
+);

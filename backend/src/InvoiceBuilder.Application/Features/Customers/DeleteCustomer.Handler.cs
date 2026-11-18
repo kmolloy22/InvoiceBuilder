@@ -25,6 +25,17 @@ internal class DeleteCustomerHandler : IRequestHandler<DeleteCustomerCommand, Re
 				new ResultError("CustomerNotFound", $"Customer with ID {cmd.Id} was not found.", ResultErrorType.NotFound));
 		}
 
+		// Invoice -> Customer is DeleteBehavior.Restrict; report it as a conflict instead of letting the FK violation surface as a 500.
+		var invoiceCount = await _dbContext.Invoices.CountAsync(i => i.CustomerId == cmd.Id, cancellationToken);
+		if (invoiceCount > 0)
+		{
+			return Result<Success>.Failure(
+				new ResultError(
+					"CustomerInUse",
+					$"Customer \"{customer.CompanyName}\" is used by {invoiceCount} invoice(s) and cannot be deleted.",
+					ResultErrorType.Conflict));
+		}
+
 		_dbContext.Customers.Remove(customer);
 		await _dbContext.SaveChangesAsync(cancellationToken);
 

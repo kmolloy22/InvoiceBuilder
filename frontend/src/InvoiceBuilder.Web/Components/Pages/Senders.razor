@@ -1,0 +1,249 @@
+@page "/senders"
+@rendermode InteractiveServer
+
+@using System.Net
+@using System.Text.Json
+@using InvoiceBuilder.Application.Features.Senders.Models.Get
+@using InvoiceBuilder.Application.Shared.Responses.Senders
+@using InvoiceBuilder.Web.Components.Senders
+@using InvoiceBuilder.Web.Services
+@using MudBlazor
+@using Refit
+
+@inject ISendersApiClient SendersApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Senders</PageTitle>
+
+<MudContainer>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h4">
+            Sender Management
+        </MudText>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="_loading"
+                   OnClick="OpenCreateDialog">
+            New Sender
+        </MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
+
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @_error
+        </MudAlert>
+    }
+
+    <MudTable T="SenderListItem"
+              Items="_senders"
+              Hover="true"
+              Striped="true"
+              Dense="true"
+              Loading="_loading">
+        <HeaderContent>
+            <MudTh>Company</MudTh>
+            <MudTh>Full Name</MudTh>
+            <MudTh>Tax / VAT ID</MudTh>
+            <MudTh Style="text-align:right">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Company">@context.SenderCompanyName</MudTd>
+            <MudTd DataLabel="Full Name">@context.SenderFullName</MudTd>
+            <MudTd DataLabel="Tax / VAT ID">@context.SenderTaxVatId</MudTd>
+            <MudTd DataLabel="Actions" Style="text-align:right">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Size="Size.Small"
+                               Color="Color.Primary"
+                               Disabled="_loading"
+                               aria-label="Edit sender"
+                               OnClick="() => OpenEditDialog(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small"
+                               Color="Color.Error"
+                               Disabled="_loading"
+                               aria-label="Delete sender"
+                               OnClick="() => DeleteSender(context)" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            @if (!_loading)
+            {
+                <MudText>No senders found.</MudText>
+            }
+        </NoRecordsContent>
+    </MudTable>
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mt-4">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.ChevronLeft"
+                   Disabled="_loading || !_hasPreviousPage"
+                   OnClick="LoadPreviousPage">
+            Previous
+        </MudButton>
+        <MudText Typo="Typo.body2">Page @(_pageNumber)</MudText>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   EndIcon="@Icons.Material.Filled.ChevronRight"
+                   Disabled="_loading || !_hasNextPage"
+                   OnClick="LoadNextPage">
+            Next
+        </MudButton>
+    </MudStack>
+
+</MudContainer>
+
+@code {
+
+    private const int PageSize = 5;
+
+    private readonly List<SenderListItem> _senders = new();
+    private Guid? _nextCursor;
+    private Guid? _previousCursor;
+    private bool _hasNextPage;
+    private bool _hasPreviousPage;
+    private int _pageNumber = 1;
+    private bool _loading;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+        => await LoadSenders();
+
+    private Task LoadNextPage()
+        => LoadSenders(_nextCursor, isNextPage: true, _pageNumber + 1);
+
+    private Task LoadPreviousPage()
+        => LoadSenders(_previousCursor, isNextPage: false, _pageNumber - 1);
+
+    private async Task LoadSenders(Guid? cursor = null, bool? isNextPage = null, int pageNumber = 1)
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+
+            var request = new GetSendersDto(
+                Cursor: cursor,
+                IsNextPage: isNextPage,
+                PageSize: PageSize);
+
+            var result = await SendersApiClient.GetSendersAsync(request);
+
+            _senders.Clear();
+            _senders.AddRange(result.Items);
+            _nextCursor = result.NextCursor;
+            _previousCursor = result.PreviousCursor;
+            _hasNextPage = result.NextCursor.HasValue;
+            _hasPreviousPage = result.PreviousCursor.HasValue;
+            _pageNumber = pageNumber;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load senders: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var dialog = await DialogService.ShowAsync<SenderFormDialog>("New Sender");
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: SenderListItem created })
+        {
+            _senders.Insert(0, created);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenEditDialog(SenderListItem item)
+    {
+        var parameters = new DialogParameters<SenderFormDialog>
+        {
+            { x => x.SenderId, item.Id }
+        };
+
+        var dialog = await DialogService.ShowAsync<SenderFormDialog>("Edit Sender", parameters);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: SenderListItem updated })
+        {
+            var index = _senders.FindIndex(s => s.Id == updated.Id);
+            if (index >= 0)
+            {
+                _senders[index] = updated;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteSender(SenderListItem item)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Delete sender",
+            $"Delete \"{item.SenderCompanyName}\"? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (!confirmed.GetValueOrDefault())
+        {
+            return;
+        }
+
+        try
+        {
+            await SendersApiClient.DeleteSenderAsync(item.Id);
+            _senders.RemoveAll(s => s.Id == item.Id);
+            Snackbar.Add("Sender deleted", Severity.Success);
+            StateHasChanged();
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        {
+            // The API returns a ResultError ({ code, message, type }) when the sender is still referenced by invoices.
+            Snackbar.Add(
+                ReadErrorMessage(ex.Content) ?? "This sender is used by invoices and cannot be deleted.",
+                Severity.Warning);
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Delete failed ({(int)ex.StatusCode} {ex.ReasonPhrase})", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private static string? ReadErrorMessage(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(content);
+            return doc.RootElement.TryGetProperty("message", out var message)
+                && message.ValueKind == JsonValueKind.String
+                    ? message.GetString()
+                    : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+}

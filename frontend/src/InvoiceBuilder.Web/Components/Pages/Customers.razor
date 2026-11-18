@@ -1,6 +1,8 @@
 @page "/customers"
 @rendermode InteractiveServer
 
+@using System.Net
+@using System.Text.Json
 @using InvoiceBuilder.Application.Features.Customers.Models.Get
 @using InvoiceBuilder.Application.Shared.Responses.Customers
 @using InvoiceBuilder.Web.Components.Customers
@@ -206,6 +208,13 @@
             Snackbar.Add("Customer deleted", Severity.Success);
             StateHasChanged();
         }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        {
+            // The API returns a ResultError ({ code, message, type }) when the customer is still referenced by invoices.
+            Snackbar.Add(
+                ReadErrorMessage(ex.Content) ?? "This customer is used by invoices and cannot be deleted.",
+                Severity.Warning);
+        }
         catch (ApiException ex)
         {
             Snackbar.Add($"Delete failed ({(int)ex.StatusCode} {ex.ReasonPhrase})", Severity.Error);
@@ -213,6 +222,27 @@
         catch (Exception ex)
         {
             Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private static string? ReadErrorMessage(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(content);
+            return doc.RootElement.TryGetProperty("message", out var message)
+                && message.ValueKind == JsonValueKind.String
+                    ? message.GetString()
+                    : null;
+        }
+        catch (JsonException)
+        {
+            return null;
         }
     }
 

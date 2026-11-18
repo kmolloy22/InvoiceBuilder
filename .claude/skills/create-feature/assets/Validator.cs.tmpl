@@ -1,0 +1,12 @@
+using FluentValidation;
+using InvoiceBuilder.Application.Features.{{Feature}}.Models.{{Op}};
+
+namespace InvoiceBuilder.Application.Features.{{Feature}}.Validation;
+
+public sealed class {{Op}}{{Entity}}DtoValidator : AbstractValidator<{{Op}}{{Entity}}Dto>
+{
+	public {{Op}}{{Entity}}DtoValidator()
+	{
+{{ValidatorRules}}
+	}
+}

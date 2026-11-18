@@ -1,4 +1,5 @@
 ﻿using InvoiceBuilder.Application.Features.Senders;
+using InvoiceBuilder.Domain.Results;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,16 +16,19 @@ public static class DeleteSenderEndpoint
 			var result = await mediator.Send(new DeleteSenderCommand(Guid.Parse(id)));
 			if (result.IsFailure)
 			{
-				return Results.NotFound(result.Error);
+				return result.Error is { Type: ResultErrorType.Conflict }
+					? Results.Conflict(result.Error)
+					: Results.NotFound(result.Error);
 			}
 
 			return Results.NoContent();
 		})
 		.WithName("DeleteSender")
 		.WithSummary("Deletes a sender.")
-		.WithDescription("Deletes the specified sender if it exists. Returns 204 No Content if successful, 404 Not Found if the sender doesn't exist, or 400 Bad Request for invalid input.")
+		.WithDescription("Deletes the specified sender if it exists. Returns 204 No Content if successful, 404 Not Found if the sender doesn't exist, 409 Conflict if the sender is still referenced by invoices, or 400 Bad Request for invalid input.")
 		.Produces(StatusCodes.Status204NoContent)
 		.Produces(StatusCodes.Status404NotFound)
+		.Produces<object>(StatusCodes.Status409Conflict, "application/json")
 		.Produces<object>(StatusCodes.Status400BadRequest, "application/json")
 		.ProducesProblem(StatusCodes.Status500InternalServerError);
 	}
